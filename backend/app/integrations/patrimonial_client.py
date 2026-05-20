@@ -19,8 +19,12 @@ log = logging.getLogger("manutencao.frota")
 
 
 def _hash_to_int(hex_id: str) -> int:
-    """UUID hex (32 chars) → Integer 32-bit pra veiculo_patrimonial_id."""
-    return int(hex_id[:8], 16)
+    """UUID hex (32 chars) → Integer 32-bit pra veiculo_patrimonial_id.
+
+    Usa 7 chars hex (max 16^7 = 268M) pra caber em INT4 do Postgres (max 2.1B).
+    Colisão em 15 veículos: praticamente zero (probabilidade ~1 em 18M).
+    """
+    return int(hex_id[:7], 16)
 
 
 def _detecta_tipo(modelo: str) -> str:
