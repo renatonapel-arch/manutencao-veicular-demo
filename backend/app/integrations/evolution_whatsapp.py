@@ -1,13 +1,18 @@
-"""Mock Evolution WhatsApp — toast preview no MVP.
+"""Notificações WhatsApp via notifier central da Napel.
 
-TODO[ADR-evolution-whatsapp]: substituir mock por integração real Evolution sandbox
-quando OWNERS.md for assinado (Cesar infra + Renato worker + PM templates).
+- EVOLUTION_ENABLED=false → toast preview (mock, default seguro)
+- EVOLUTION_ENABLED=true  → POST pro notifier (http://195.35.19.31:18200)
+  que enfileira e envia via Evolution dentro da janela 06-22 BRT.
+
+Padrão Napel: alertas pontuais/ad-hoc viajam como texto puro. 1 evento = 1 msg.
 """
 from __future__ import annotations
 
 import logging
 from datetime import datetime
 from typing import Optional
+
+import httpx
 
 from ..config import settings
 from ..models import AlertaHistory, OrdemServico, VeiculoSnapshot
@@ -66,14 +71,44 @@ def render_template(
     )
 
 
+def _enviar_via_notifier(telefone: str, mensagem: str, tag: str) -> dict:
+    """POST pro notifier central. Ele cuida da janela 22-06 BRT + Evolution."""
+    url = f"{settings.NOTIFIER_URL.rstrip('/')}/"
+    payload = {
+        "to": telefone,
+        "text": mensagem,
+        "source": "manutencao-veicular-demo",
+        "tag": tag,
+    }
+    try:
+        with httpx.Client(timeout=8.0) as c:
+            r = c.post(url, json=payload)
+            r.raise_for_status()
+        log.info("Notifier OK · tag=%s · tel=***%s", tag, telefone[-4:])
+        body = r.json() if r.headers.get("content-type","").startswith("application/json") else r.text
+        return {"sent": True, "via": "notifier", "response": body}
+    except httpx.HTTPError as e:
+        log.exception("Notifier falhou (tag=%s): %s", tag, e)
+        return {"sent": False, "error": str(e)}
+
+
 def dispatch_alerta(alerta: AlertaHistory) -> dict:
-    """Mock: registra como 'sent' imediatamente; real entra na fila Redis."""
+    """Envia o alerta. Mock se EVOLUTION_ENABLED=false; real via notifier se true."""
     if not settings.EVOLUTION_ENABLED:
-        alerta.status = "sent"  # mock: simula entrega bem-sucedida
+        alerta.status = "sent"  # mock
         alerta.sent_at = datetime.utcnow()
-        log.info("Evolution MOCK · alerta_id=%s · telefone=%s · mock=true",
-                 alerta.id, alerta.telefone)
+        log.info("MOCK · tag=%s", alerta.tipo_alerta)
         return {"sent": False, "mock": True, "preview": alerta.mensagem}
-    # TODO[ADR-evolution-whatsapp]: enfileirar em Redis pra worker async
-    alerta.status = "pending"
-    return {"sent": False, "queued": True}
+
+    result = _enviar_via_notifier(
+        telefone=alerta.telefone or settings.RENATO_WHATSAPP,
+        mensagem=alerta.mensagem or "",
+        tag=f"manutencao:{alerta.tipo_alerta}:{alerta.os_id or alerta.veiculo_id or '?'}",
+    )
+    if result.get("sent"):
+        alerta.status = "sent"
+        alerta.sent_at = datetime.utcnow()
+    else:
+        alerta.status = "failed"
+        alerta.error_msg = (result.get("error") or "?")[:500]
+    return result

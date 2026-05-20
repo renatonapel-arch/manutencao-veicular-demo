@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     OLEO_BASE_URL: str = "https://troca-oleo.demos.napel.com.br"
     OLEO_PIN: str = "9999"
 
+    # Notifier central da Napel (event-driven · respeita janela 22-06 BRT)
+    NOTIFIER_URL: str = "http://195.35.19.31:18200"
+    RENATO_WHATSAPP: str = "5544999413366"
+
     STAGE: str = "demo"  # demo | staging | prod
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:8765,https://manutencao.demos.napel.com.br"
     UPLOAD_DIR: str = "/app/data/uploads"
