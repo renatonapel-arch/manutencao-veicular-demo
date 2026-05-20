@@ -25,15 +25,30 @@ def init_database():
 
 
 def _migrate_schema():
-    """Adiciona colunas novas em tabelas existentes (Alembic ad-hoc pra demo).
+    """Migrations ad-hoc (Alembic-lite pra demo).
 
-    Tolerância: se a coluna já existe, ignora.
+    1) Adiciona colunas novas em tabelas existentes (idempotente via IF NOT EXISTS)
+    2) Reseta sequences pra MAX(id)+1 — corrige seeds que forçaram IDs explícitos
+       e deixaram o nextval do Postgres em 1 (causando UniqueViolation)
     """
     from sqlalchemy import text as sql_text
     migrations = [
         "ALTER TABLE veiculo_snapshot ADD COLUMN IF NOT EXISTS frota_external_id VARCHAR(64)",
         "ALTER TABLE veiculo_snapshot ADD COLUMN IF NOT EXISTS marca VARCHAR(80)",
         "CREATE UNIQUE INDEX IF NOT EXISTS uq_veiculo_frota_external ON veiculo_snapshot(frota_external_id)",
+    ]
+    sequences = [
+        ("users",               "users_id_seq"),
+        ("oficina_padronizada", "oficina_padronizada_id_seq"),
+        ("veiculo_snapshot",    "veiculo_snapshot_id_seq"),
+        ("plano_preventiva",    "plano_preventiva_id_seq"),
+        ("os_manutencao",       "os_manutencao_id_seq"),
+        ("os_item_linha",       "os_item_linha_id_seq"),
+        ("anexos_os",           "anexos_os_id_seq"),
+        ("alert_history",       "alert_history_id_seq"),
+        ("troca_oleo_cache",    "troca_oleo_cache_id_seq"),
+        ("preventiva_gerada",   "preventiva_gerada_id_seq"),
+        ("auditoria_os",        "auditoria_os_id_seq"),
     ]
     with engine.begin() as conn:
         for m in migrations:
@@ -42,6 +57,13 @@ def _migrate_schema():
                 log.info("migrate: %s", m[:80])
             except Exception as e:
                 log.warning("migrate skip (%s): %s", m[:50], e)
+        for table, seq in sequences:
+            try:
+                conn.execute(sql_text(
+                    f"SELECT setval('{seq}', COALESCE((SELECT MAX(id) FROM {table}), 1))"
+                ))
+            except Exception as e:
+                log.warning("setval skip %s: %s", seq, str(e)[:80])
 
 
 def seed_all():
