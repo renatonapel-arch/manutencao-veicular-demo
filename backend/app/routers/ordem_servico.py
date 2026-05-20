@@ -148,8 +148,21 @@ def list_os(
         query = query.filter(OrdemServico.descricao_problema.ilike(f"%{q}%"))
 
     total = query.count()
-    items = query.order_by(OrdemServico.data_abertura.desc()).offset(offset).limit(limit).all()
-    return ListaOSResponse(data=items, total=total, limit=limit, offset=offset)
+    items = (
+        query
+        .options(selectinload(OrdemServico.veiculo), selectinload(OrdemServico.oficina))
+        .order_by(OrdemServico.data_abertura.desc())
+        .offset(offset).limit(limit).all()
+    )
+    # Popula campos derivados (placa, modelo, oficina_nome) pra UI evitar 2º round-trip
+    out = []
+    for o in items:
+        d = OrdemServicoOut.model_validate(o)
+        d.veiculo_placa = o.veiculo.placa if o.veiculo else None
+        d.veiculo_modelo = o.veiculo.modelo if o.veiculo else None
+        d.oficina_nome = o.oficina.nome if o.oficina else None
+        out.append(d)
+    return ListaOSResponse(data=out, total=total, limit=limit, offset=offset)
 
 
 @router.get("/{os_id}", response_model=OrdemServicoDetalhe)

@@ -153,6 +153,10 @@ class OrdemServicoOut(BaseModel):
     descricao_problema: Optional[str] = None
     created_by: int
     updated_at: datetime
+    # Campos derivados (preenchidos no router pra evitar lookups extras no front)
+    veiculo_placa: Optional[str] = None
+    veiculo_modelo: Optional[str] = None
+    oficina_nome: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)
 
 

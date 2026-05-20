@@ -64,6 +64,46 @@ export default function DashboardPage() {
         <div className="kpi-card"><div className="text-[10px] uppercase text-ink-500">Maior OS do mês</div><div className="text-lg font-semibold font-mono">{fmtBRL(dash.maior_os_mes)}</div></div>
       </div>
 
+      {/* Evolução mensal CPK */}
+      {(() => {
+        const serie = dash.serie_temporal_12m || []
+        if (serie.length < 2) return null
+        const max = Math.max(...serie.map((s: any) => s.valor || 0), 1)
+        const points = serie.map((s: any, i: number) => {
+          const x = 40 + (i * 550 / Math.max(serie.length - 1, 1))
+          const y = 140 - ((s.valor || 0) / max) * 110
+          return `${x.toFixed(1)},${y.toFixed(1)}`
+        }).join(' ')
+        return (
+          <div className="bg-white border border-border rounded p-3 mb-3">
+            <div className="flex justify-between items-center mb-2">
+              <div className="text-[13px] font-medium text-naval">Evolução mensal — custo total (últimos 12 meses)</div>
+              <div className="text-[10px] text-ink-500 font-mono">máx: {fmtBRL(max)}</div>
+            </div>
+            <svg viewBox="0 0 600 170" className="w-full h-40">
+              <line x1="40" y1="20" x2="40" y2="140" stroke="#D6E7F1"/>
+              <line x1="40" y1="140" x2="590" y2="140" stroke="#D6E7F1"/>
+              <text x="6" y="25" fill="#7DA4C6" fontSize="9" fontFamily="JetBrains Mono">{fmtBRL(max)}</text>
+              <text x="6" y="85" fill="#7DA4C6" fontSize="9" fontFamily="JetBrains Mono">{fmtBRL(max/2)}</text>
+              <text x="6" y="142" fill="#7DA4C6" fontSize="9" fontFamily="JetBrains Mono">R$ 0</text>
+              <polyline points={points} stroke="#113C58" fill="none" strokeWidth="2.5"/>
+              {serie.map((s: any, i: number) => {
+                const x = 40 + (i * 550 / Math.max(serie.length - 1, 1))
+                const y = 140 - ((s.valor || 0) / max) * 110
+                return (
+                  <g key={i}>
+                    <circle cx={x} cy={y} r="3" fill="#113C58"/>
+                    <text x={x} y="158" fill="#7DA4C6" fontSize="9" textAnchor="middle">
+                      {(s.mes || '').slice(5)}/{(s.mes || '').slice(2,4)}
+                    </text>
+                  </g>
+                )
+              })}
+            </svg>
+          </div>
+        )
+      })()}
+
       {/* Distribuição + Top */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div className="bg-white border border-border rounded p-3">
@@ -139,9 +179,9 @@ export default function DashboardPage() {
           </thead>
           <tbody>
             {(ultimasOS?.data || []).map((os: any) => (
-              <tr key={os.id} className="border-t border-border hover:bg-ink-50 cursor-pointer">
+              <tr key={os.id} className="border-t border-border hover:bg-ink-50 cursor-pointer" onClick={() => location.assign(`/os/${os.id}`)}>
                 <td><Link to={`/os/${os.id}`} className="font-mono text-naval">#{os.id}</Link></td>
-                <td>veic {os.veiculo_id}</td>
+                <td><span className="font-mono">{os.veiculo_placa || `veic ${os.veiculo_id}`}</span> <span className="text-ink-500">· {os.veiculo_modelo || ''}</span></td>
                 <td><FilialChip filialId={os.filial_id}/></td>
                 <td><TipoBadge tipo={os.tipo_os}/></td>
                 <td><StatusBadge status={os.status}/></td>

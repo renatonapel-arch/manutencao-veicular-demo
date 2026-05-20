@@ -4,6 +4,7 @@ import LoginPage from './auth/LoginPage'
 import Layout from './components/Layout'
 import DashboardPage from './pages/DashboardPage'
 import ListaOSPage from './pages/ListaOSPage'
+import NovaOSPage from './pages/NovaOSPage'
 import DetalheOSPage from './pages/DetalheOSPage'
 import PlanosPage from './pages/PlanosPage'
 import OficinasPage from './pages/OficinasPage'
@@ -26,6 +27,7 @@ export default function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="os" element={<ListaOSPage />} />
+        <Route path="os/nova" element={<NovaOSPage />} />
         <Route path="os/:id" element={<DetalheOSPage />} />
         <Route path="planos" element={<PlanosPage />} />
         <Route path="oficinas" element={<OficinasPage />} />

@@ -83,10 +83,10 @@ export default function ListaOSPage() {
               <tr><td colSpan={7} className="text-center text-ink-500 py-6">Nenhuma OS encontrada com os filtros aplicados.</td></tr>
             )}
             {(data?.data || []).map((os: any) => (
-              <tr key={os.id} className="border-t border-border hover:bg-ink-50 cursor-pointer">
+              <tr key={os.id} className="border-t border-border hover:bg-ink-50 cursor-pointer" onClick={() => location.assign(`/os/${os.id}`)}>
                 <td><Link to={`/os/${os.id}`} className="font-mono text-naval">#{os.id}</Link></td>
                 <td className="font-mono">{fmtData(os.data_abertura)}</td>
-                <td>veic {os.veiculo_id}</td>
+                <td><span className="font-mono">{os.veiculo_placa || `veic ${os.veiculo_id}`}</span> <span className="text-ink-500">· {os.veiculo_modelo || ''}</span></td>
                 <td><FilialChip filialId={os.filial_id}/></td>
                 <td><TipoBadge tipo={os.tipo_os}/></td>
                 <td><StatusBadge status={os.status}/></td>
