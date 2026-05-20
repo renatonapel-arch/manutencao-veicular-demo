@@ -57,12 +57,22 @@ def create_oficina(
     db: Session = Depends(get_db),
 ):
     nome_normalizado = payload.nome.strip()
+    if not nome_normalizado:
+        raise HTTPException(status_code=400, detail="Nome obrigatório")
     existing = db.query(OficinaPadronizada).filter(
         func.lower(func.trim(OficinaPadronizada.nome)) == nome_normalizado.lower()
     ).first()
     if existing:
         raise HTTPException(status_code=409, detail=f"Oficina já existe (ID {existing.id})")
-    of = OficinaPadronizada(nome=nome_normalizado, **payload.model_dump(exclude={"nome"}))
+
+    # Normaliza strings vazias pra None (evita UNIQUE violation em CNPJ='')
+    data = payload.model_dump(exclude={"nome"})
+    for k in ("cnpj", "telefone", "cidade", "uf"):
+        v = data.get(k)
+        if isinstance(v, str):
+            data[k] = v.strip() or None
+
+    of = OficinaPadronizada(nome=nome_normalizado, **data)
     db.add(of)
     db.commit()
     db.refresh(of)

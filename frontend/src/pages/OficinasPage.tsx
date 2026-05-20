@@ -35,10 +35,19 @@ export default function OficinasPage() {
   })
 
   const createMut = useMutation({
-    mutationFn: (payload: OficinaForm) => api.post('/oficinas', {
-      ...payload,
-      filial_id_preferencial: payload.filial_id_preferencial || null,
-    }).then(r => r.data),
+    mutationFn: (payload: OficinaForm) => {
+      // Normaliza strings vazias pra null (evita UNIQUE violation no CNPJ='')
+      const clean = (s: string) => (s.trim() || null)
+      return api.post('/oficinas', {
+        nome: payload.nome.trim(),
+        cnpj: clean(payload.cnpj),
+        telefone: clean(payload.telefone),
+        cidade: clean(payload.cidade),
+        uf: clean(payload.uf),
+        especialidade: payload.especialidade || null,
+        filial_id_preferencial: payload.filial_id_preferencial || null,
+      }).then(r => r.data)
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['oficinas'] })
       setModalAberto(false)
