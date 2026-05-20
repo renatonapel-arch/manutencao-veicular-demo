@@ -53,7 +53,7 @@ def oficina_stats(oid: int, user: User = Depends(get_current_user), db: Session 
 @router.post("", response_model=OficinaOut, status_code=201)
 def create_oficina(
     payload: OficinaCreate,
-    user: User = Depends(require_role(["admin_oficinas", "admin"])),
+    user: User = Depends(require_role(["admin_oficinas", "admin", "filial_responsavel"])),
     db: Session = Depends(get_db),
 ):
     nome_normalizado = payload.nome.strip()
@@ -72,7 +72,7 @@ def create_oficina(
 @router.delete("/{oid}")
 def deactivate_oficina(
     oid: int,
-    user: User = Depends(require_role(["admin_oficinas", "admin"])),
+    user: User = Depends(require_role(["admin_oficinas", "admin", "filial_responsavel"])),
     db: Session = Depends(get_db),
 ):
     of = db.query(OficinaPadronizada).filter(OficinaPadronizada.id == oid).first()
