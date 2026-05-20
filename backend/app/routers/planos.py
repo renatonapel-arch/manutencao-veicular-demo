@@ -49,7 +49,7 @@ def list_planos(
 @router.post("", response_model=PlanoOut, status_code=201)
 def create_plano(
     payload: PlanoCreate,
-    user: User = Depends(require_role(["admin"])),
+    user: User = Depends(require_role(["admin", "filial_responsavel"])),
     db: Session = Depends(get_db),
 ):
     if not payload.km_intervalo and not payload.dias_intervalo:
@@ -65,7 +65,7 @@ def create_plano(
 def update_plano(
     plano_id: int,
     payload: PlanoUpdate,
-    user: User = Depends(require_role(["admin"])),
+    user: User = Depends(require_role(["admin", "filial_responsavel"])),
     db: Session = Depends(get_db),
 ):
     p = db.query(PlanoPreventiva).filter(PlanoPreventiva.id == plano_id).first()
@@ -81,7 +81,7 @@ def update_plano(
 @router.delete("/{plano_id}")
 def delete_plano(
     plano_id: int,
-    user: User = Depends(require_role(["admin"])),
+    user: User = Depends(require_role(["admin", "filial_responsavel"])),
     db: Session = Depends(get_db),
 ):
     p = db.query(PlanoPreventiva).filter(PlanoPreventiva.id == plano_id).first()
