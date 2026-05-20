@@ -26,7 +26,7 @@ export default function DetalheOSPage() {
 
   const patchMut = useMutation({
     mutationFn: (payload: any) => api.patch(`/ordem-servico/${id}`, payload).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['os', id] }),
+    onSuccess: () => qc.invalidateQueries(),  // refresca OS + Dashboard + listas + timeline
     onError: (e: any) => alert(e.response?.data?.detail || 'Erro ao atualizar'),
   })
 
@@ -39,7 +39,7 @@ export default function DetalheOSPage() {
         headers: { 'Content-Type': 'multipart/form-data' }
       }).then(r => r.data)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['os', id] }),
+    onSuccess: () => qc.invalidateQueries(),
     onError: (e: any) => alert(e.response?.data?.detail || 'Erro no upload'),
   })
 
@@ -50,6 +50,7 @@ export default function DetalheOSPage() {
       telefone: '+5544999990000',
     }).then(r => r.data),
     onSuccess: (data) => {
+      qc.invalidateQueries()
       alert(`Alerta enviado (mock):\n\n${data.mensagem}`)
       setModalAlerta(false)
     },

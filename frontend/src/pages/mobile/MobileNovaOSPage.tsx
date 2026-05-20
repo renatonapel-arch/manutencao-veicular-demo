@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../api/client'
 import { fmtBRL } from '../../components/Badges'
@@ -24,6 +24,7 @@ const PASSOS = ['Veículo', 'Oficina', 'Itens', 'Anexos', 'Revisar']
 
 export default function MobileNovaOSPage() {
   const nav = useNavigate()
+  const qc = useQueryClient()
   const [passo, setPasso] = useState(0)
   const [veiculoId, setVeiculoId] = useState<number | ''>('')
   const [oficinaId, setOficinaId] = useState<number | ''>('')
@@ -72,7 +73,10 @@ export default function MobileNovaOSPage() {
       }
       return api.post('/ordem-servico', payload, { headers: { 'Idempotency-Key': payload.request_id } }).then(r => r.data)
     },
-    onSuccess: (data) => nav(`/os/${data.id}`),
+    onSuccess: (data) => {
+      qc.invalidateQueries()
+      nav(`/os/${data.id}`)
+    },
     onError: (e: any) => setErro(e.response?.data?.detail || 'Erro ao criar OS'),
   })
 

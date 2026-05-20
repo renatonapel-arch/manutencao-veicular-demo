@@ -14,7 +14,7 @@ export default function MobileDetalheOSPage() {
 
   const patch = useMutation({
     mutationFn: (payload: any) => api.patch(`/ordem-servico/${id}`, payload).then(r => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['os', id] }),
+    onSuccess: () => qc.invalidateQueries(),
     onError: (e: any) => alert(e.response?.data?.detail || 'Erro'),
   })
 
@@ -27,7 +27,7 @@ export default function MobileDetalheOSPage() {
         headers: { 'Content-Type': 'multipart/form-data' }
       }).then(r => r.data)
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['os', id] }),
+    onSuccess: () => qc.invalidateQueries(),
     onError: (e: any) => alert(e.response?.data?.detail || 'Erro upload'),
   })
 

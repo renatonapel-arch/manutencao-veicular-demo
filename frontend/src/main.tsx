@@ -11,7 +11,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      staleTime: 60_000,
+      // Listas/dashboards refazem ao montar (entrar na rota) pra evitar stale.
+      // Cache de 30s evita doublefetch dentro da mesma tela.
+      refetchOnMount: 'always',
+      staleTime: 30_000,
       retry: 1,
     },
   },

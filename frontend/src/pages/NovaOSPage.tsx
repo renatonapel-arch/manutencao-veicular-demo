@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { fmtBRL, FilialChip } from '../components/Badges'
@@ -24,6 +24,7 @@ function uuid4(): string {
 
 export default function NovaOSPage() {
   const nav = useNavigate()
+  const qc = useQueryClient()
   const { data: veiculos } = useQuery({
     queryKey: ['veiculos-form'],
     queryFn: () => api.get('/veiculos').then(r => r.data),
@@ -89,6 +90,7 @@ export default function NovaOSPage() {
       }).then(r => r.data)
     },
     onSuccess: (data) => {
+      qc.invalidateQueries()  // refaz Dashboard, listas, etc.
       nav(`/os/${data.id}`)
     },
     onError: (e: any) => {
