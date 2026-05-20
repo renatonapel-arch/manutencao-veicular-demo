@@ -1,13 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import EmptyState from '../components/EmptyState'
-
-const MODELOS_SUGERIDOS = [
-  'CG 160 FAN', 'CG 125 FAN KS', 'CG 125I FAN',
-  'STRADA ENDURANCE CS', 'SAVEIRO CS RB MF', 'SAVEIRO 1.6 CS',
-  'MONTANA', 'EMPILHADEIRA HYSTER',
-]
 
 interface PlanoForm {
   modelo_veiculo: string
@@ -37,6 +31,20 @@ export default function PlanosPage() {
     queryKey: ['planos'],
     queryFn: () => api.get('/planos').then(r => r.data),
   })
+
+  // Modelos disponíveis = modelos únicos dos veículos cadastrados na frota
+  const { data: veiculos } = useQuery({
+    queryKey: ['veiculos-modelos'],
+    queryFn: () => api.get('/veiculos').then(r => r.data),
+  })
+
+  const modelosDisponiveis = useMemo(() => {
+    const set = new Set<string>()
+    for (const v of veiculos || []) {
+      if (v.modelo) set.add(v.modelo)
+    }
+    return Array.from(set).sort()
+  }, [veiculos])
 
   const createMut = useMutation({
     mutationFn: (payload: PlanoForm) => api.post('/planos', {
@@ -154,17 +162,19 @@ export default function PlanosPage() {
             <div className="space-y-3">
               <div>
                 <label className="text-[11px] text-ink-500">Modelo do veículo <span className="text-danger">*</span></label>
-                <input
-                  type="text"
+                <select
                   value={form.modelo_veiculo}
                   onChange={(e) => setForm({ ...form, modelo_veiculo: e.target.value })}
-                  list="modelos-list"
-                  placeholder="Ex: CG 160 FAN"
-                  className="w-full px-3 py-2 border border-border-strong rounded text-sm"
-                />
-                <datalist id="modelos-list">
-                  {MODELOS_SUGERIDOS.map(m => <option key={m} value={m} />)}
-                </datalist>
+                  className="w-full px-3 py-2 border border-border-strong rounded text-sm bg-white"
+                >
+                  <option value="">— escolha o modelo da frota —</option>
+                  {modelosDisponiveis.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+                <div className="text-[10px] text-ink-500 mt-1">
+                  {modelosDisponiveis.length} modelos distintos cadastrados no Controle Patrimonial · texto livre <b className="text-danger-fg">bloqueado</b>
+                </div>
               </div>
 
               <div>
