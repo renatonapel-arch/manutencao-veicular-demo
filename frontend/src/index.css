@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Saira', system-ui, sans-serif;
+  font-feature-settings: 'tnum';
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #B5D4E8; border-radius: 3px; }
+
+/* Badge base */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  letter-spacing: 0.005em;
+}
+.st-rascunho { background: #F1F5F9; color: #64748B; }
+.st-aberta { background: #EBF7FA; color: #113C58; }
+.st-aguardando_anexos { background: #FEF3C7; color: #92400E; }
+.st-pronta_execucao { background: #EDE9FE; color: #6D28D9; }
+.st-em_execucao { background: #FFEDD5; color: #C2410C; }
+.st-validada { background: #113C58; color: white; }
+.st-encerrada { background: #D1FAE5; color: #065F46; }
+.st-cancelada { background: #F1F5F9; color: #94A3B8; text-decoration: line-through; }
+
+.tp-corretiva, .tp-corretiva_manual, .tp-corretiva_checklist { background: #FEE2E2; color: #991B1B; }
+.tp-preventiva, .tp-preventiva_automatica { background: #D1FAE5; color: #065F46; }
+.tp-devolucao { background: #FEF3C7; color: #92400E; }
+
+.fil-1, .fil-100 { background: #EBF7FA; color: #113C58; }
+.fil-2, .fil-700 { background: #FEF3C7; color: #92400E; }
+.fil-3, .fil-900 { background: #D1FAE5; color: #065F46; }
+
+.src-os_manutencao { background: #EBF7FA; color: #113C58; }
+.src-troca_oleo { background: #F1F5F9; color: #3D6889; }
+.src-checklist_v2 { background: #D1FAE5; color: #065F46; }
+.src-patrimonial { background: #E5E7EB; color: #27557A; }
+
+.nav-item { transition: background-color .1s; }
+.nav-item:hover { background-color: #0A3450; }
+.nav-item.active { background-color: #113C58; color: white; }
+.nav-sub.active { color: #B5D4E8; font-weight: 500; }
+
+.kpi-card {
+  background: white;
+  border: 1px solid #E4EEF3;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+/* Device frame mobile */
+.device-frame {
+  width: 375px;
+  height: 720px;
+  background: #042C48;
+  border-radius: 36px;
+  padding: 10px 6px;
+  box-shadow: 0 14px 40px rgba(4,44,72,0.22);
+  flex-shrink: 0;
+}
+.device-screen {
+  width: 100%;
+  height: 100%;
+  background: #FAFCFD;
+  border-radius: 28px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.device-notch {
+  width: 100px;
+  height: 5px;
+  background: #0A3450;
+  border-radius: 3px;
+  margin: 0 auto 6px;
+}
+
+/* Tabelas densas */
+table.dense th, table.dense td { padding: 6px 10px; }
