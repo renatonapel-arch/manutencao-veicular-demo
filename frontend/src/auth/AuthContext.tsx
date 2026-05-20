@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { api, tokenStore } from '../api/client'
 
 export interface User {
@@ -32,6 +33,7 @@ async function autoLogin(): Promise<{ token: string; user: User }> {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const qc = useQueryClient()
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -68,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const r = await api.post('/auth/login', { email, senha })
     tokenStore.set(r.data.access_token)
     setUser(r.data.user)
+    // Limpa cache do React Query — RBAC pode trazer dados diferentes pro novo user
+    qc.clear()
   }
 
   // Troca rápida de usuário (pra testar RBAC) — sem precisar passar pela tela de login
@@ -79,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { await api.post('/auth/logout') } catch {}
     tokenStore.clear()
     setUser(null)
+    qc.clear()
     if (AUTO_LOGIN_DEMO) {
       // Re-faz auto-login transparente
       try {
