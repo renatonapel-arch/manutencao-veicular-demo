@@ -97,11 +97,20 @@ if settings.SERVE_FRONTEND and FRONTEND_DIST.exists():
 
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
 
+    # Servir TODOS os arquivos estáticos do dist na raiz (registerSW.js, workbox-*.js,
+    # pwa-*.png, favicon, etc.) — ANTES do fallback SPA
+    app.mount("/static-root", StaticFiles(directory=str(FRONTEND_DIST)), name="static-root")
+
     @app.get("/{full_path:path}", include_in_schema=False)
     def spa_fallback(full_path: str):
+        from fastapi import HTTPException
         if full_path.startswith("api/"):
-            from fastapi import HTTPException
             raise HTTPException(status_code=404)
+        # Se o path tem extensão de arquivo estático, tenta servir do dist
+        candidate = FRONTEND_DIST / full_path
+        if candidate.is_file():
+            return FileResponse(candidate)
+        # Caso contrário, SPA fallback (rotas client-side React Router)
         return FileResponse(FRONTEND_DIST / "index.html")
 else:
     log.warning("SERVE_FRONTEND=false ou dist ausente em %s", FRONTEND_DIST)

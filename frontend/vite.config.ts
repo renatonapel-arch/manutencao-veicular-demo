@@ -7,7 +7,6 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Clavis · Manutenção Veicular',
         short_name: 'Manutenção',
@@ -18,8 +17,13 @@ export default defineConfig({
         scope: '/',
         start_url: '/',
         icons: [
-          { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
+          // SVG inline (data URI) — evita 404 dos PNGs sem precisar gerar imagens
+          {
+            src: "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='32' fill='%23113C58'/%3E%3Ctext x='96' y='128' font-family='system-ui,Apple Color Emoji' font-size='110' font-weight='700' fill='white' text-anchor='middle'%3E🔧%3C/text%3E%3C/svg%3E",
+            sizes: '192x192 512x512',
+            type: 'image/svg+xml',
+            purpose: 'any maskable',
+          },
         ],
       },
       workbox: {
