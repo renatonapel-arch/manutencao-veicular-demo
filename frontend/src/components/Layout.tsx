@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { useFilial } from '../context/FilialContext'
 
 const FILIAIS = [
   { id: 0, label: 'Todas as filiais' },
@@ -28,6 +29,7 @@ const breadcrumbs: Record<string, string> = {
 
 export default function Layout() {
   const { user, logout } = useAuth()
+  const { filialId, setFilialId } = useFilial()
   const loc = useLocation()
   const breadcrumb = breadcrumbs[loc.pathname]
     || (loc.pathname.startsWith('/os/') ? 'Detalhe da OS' : '')
@@ -90,8 +92,14 @@ export default function Layout() {
             <span className="font-medium text-ink-900">{breadcrumb}</span>
           </div>
           <div className="flex gap-2 items-center text-[13px]">
-            <select className="border border-border rounded px-2 py-1 bg-white text-xs" disabled={user?.role !== 'admin'}>
-              {FILIAIS.map(f => <option key={f.id}>{f.label}</option>)}
+            <select
+              className="border border-border rounded px-2 py-1 bg-white text-xs disabled:bg-ink-100 disabled:text-ink-400"
+              disabled={user?.role !== 'admin'}
+              value={filialId ?? 0}
+              onChange={(e) => setFilialId(Number(e.target.value) || null)}
+              title={user?.role !== 'admin' ? 'Travado na sua filial (RBAC backend)' : 'Filtra dashboard, OS, oficinas e alertas'}
+            >
+              {FILIAIS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
             </select>
             <span className="text-[10px] text-ink-500 font-mono">v0.1.0-demo</span>
           </div>

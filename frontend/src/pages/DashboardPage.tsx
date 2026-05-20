@@ -2,16 +2,20 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { fmtBRL, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
+import { useFilial } from '../context/FilialContext'
 
 export default function DashboardPage() {
+  const { filialId } = useFilial()
+  const qs = filialId ? `?filial_id=${filialId}` : ''
+
   const { data: dash } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: () => api.get('/dashboard').then(r => r.data),
+    queryKey: ['dashboard', filialId],
+    queryFn: () => api.get(`/dashboard${qs}`).then(r => r.data),
   })
 
   const { data: ultimasOS } = useQuery({
-    queryKey: ['ultimasOS'],
-    queryFn: () => api.get('/ordem-servico?limit=7').then(r => r.data),
+    queryKey: ['ultimasOS', filialId],
+    queryFn: () => api.get(`/ordem-servico?limit=7${filialId ? `&filial_id=${filialId}` : ''}`).then(r => r.data),
   })
 
   if (!dash) return <div className="text-ink-500">Carregando dashboard…</div>

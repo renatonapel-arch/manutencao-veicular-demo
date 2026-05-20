@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { fmtBRL, fmtData, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
+import { useFilial } from '../context/FilialContext'
 
 const STATUS_OPTS = [
   { v: '', l: 'Status: todos' },
@@ -15,6 +16,7 @@ const STATUS_OPTS = [
 ]
 
 export default function ListaOSPage() {
+  const { filialId } = useFilial()
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
   const [tipo, setTipo] = useState('')
@@ -22,12 +24,13 @@ export default function ListaOSPage() {
   const limit = 20
 
   const { data, isLoading } = useQuery({
-    queryKey: ['os', { q, status, tipo, offset }],
+    queryKey: ['os', { q, status, tipo, offset, filialId }],
     queryFn: () => {
       const params = new URLSearchParams()
       if (q) params.set('q', q)
       if (status) params.set('status', status)
       if (tipo) params.set('tipo', tipo)
+      if (filialId) params.set('filial_id', String(filialId))
       params.set('limit', String(limit))
       params.set('offset', String(offset))
       return api.get('/ordem-servico?' + params).then(r => r.data)

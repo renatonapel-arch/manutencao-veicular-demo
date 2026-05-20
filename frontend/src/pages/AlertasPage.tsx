@@ -3,15 +3,23 @@ import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { fmtDataHora } from '../components/Badges'
 import EmptyState from '../components/EmptyState'
+import { useFilial } from '../context/FilialContext'
 
 export default function AlertasPage() {
+  const { filialId } = useFilial()
   const [statusFiltro, setStatusFiltro] = useState('')
+
   const { data: alertas } = useQuery({
-    queryKey: ['alertas', statusFiltro],
-    queryFn: () => api.get('/alertas' + (statusFiltro ? `?status=${statusFiltro}` : '')).then(r => r.data),
+    queryKey: ['alertas', statusFiltro, filialId],
+    queryFn: () => {
+      const p = new URLSearchParams()
+      if (statusFiltro) p.set('status', statusFiltro)
+      if (filialId) p.set('filial_id', String(filialId))
+      return api.get('/alertas' + (p.toString() ? '?' + p : '')).then(r => r.data)
+    },
   })
   const { data: stats } = useQuery({
-    queryKey: ['alertas-stats'],
+    queryKey: ['alertas-stats', filialId],
     queryFn: () => api.get('/alertas/stats').then(r => r.data),
   })
 
