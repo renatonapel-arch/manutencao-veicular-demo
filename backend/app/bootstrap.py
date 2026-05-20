@@ -21,6 +21,27 @@ log = logging.getLogger("manutencao.bootstrap")
 def init_database():
     Base.metadata.create_all(bind=engine)
     log.info("Tabelas criadas/verificadas.")
+    _migrate_schema()
+
+
+def _migrate_schema():
+    """Adiciona colunas novas em tabelas existentes (Alembic ad-hoc pra demo).
+
+    Tolerância: se a coluna já existe, ignora.
+    """
+    from sqlalchemy import text as sql_text
+    migrations = [
+        "ALTER TABLE veiculo_snapshot ADD COLUMN IF NOT EXISTS frota_external_id VARCHAR(64)",
+        "ALTER TABLE veiculo_snapshot ADD COLUMN IF NOT EXISTS marca VARCHAR(80)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_veiculo_frota_external ON veiculo_snapshot(frota_external_id)",
+    ]
+    with engine.begin() as conn:
+        for m in migrations:
+            try:
+                conn.execute(sql_text(m))
+                log.info("migrate: %s", m[:80])
+            except Exception as e:
+                log.warning("migrate skip (%s): %s", m[:50], e)
 
 
 def seed_all():

@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     FEATURE_SIGE_ENABLED: bool = False
     FEATURE_EVOLUTION_ALERTS: bool = False
 
+    # Integrações reais (Fase C — apps já no ar na VPS Napel)
+    FROTA_BASE_URL: str = "https://frota.demos.napel.com.br"
+    FROTA_TOKEN: str = "1234"
+    OLEO_BASE_URL: str = "https://troca-oleo.demos.napel.com.br"
+    OLEO_PIN: str = "9999"
+
     STAGE: str = "demo"  # demo | staging | prod
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:8765,https://manutencao.demos.napel.com.br"
     UPLOAD_DIR: str = "/app/data/uploads"

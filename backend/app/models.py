@@ -72,8 +72,12 @@ class VeiculoSnapshot(Base):
 
     id = Column(Integer, primary_key=True)
     veiculo_patrimonial_id = Column(Integer, unique=True, nullable=False)
+    # UUID hex usado pela Frota (frota.demos.napel.com.br) e app Troca de Óleo
+    # como chave global do veículo cross-módulo
+    frota_external_id = Column(String(64), unique=True, index=True)
     placa = Column(String(10), unique=True, nullable=False)
     modelo = Column(String(100), nullable=False)
+    marca = Column(String(80))
     tipo = Column(String(20))  # moto | carro | empilhadeira
     ano = Column(Integer)
     km_atual = Column(Integer, default=0, nullable=False)
