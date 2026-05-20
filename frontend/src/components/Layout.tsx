@@ -15,7 +15,7 @@ const NAV = [
   { to: '/planos',      label: 'Planos preventivos', icon: '📅' },
   { to: '/oficinas',    label: 'Oficinas',           icon: '🏪' },
   { to: '/alertas',     label: 'Alertas WhatsApp',   icon: '📲' },
-  { to: '/mobile',      label: 'PWA motorista',      icon: '📱' },
+  { to: '/mobile',      label: 'Preview UX (devs)',  icon: '📱' },
 ]
 
 const breadcrumbs: Record<string, string> = {

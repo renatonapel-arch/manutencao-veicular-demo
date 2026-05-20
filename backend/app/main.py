@@ -56,7 +56,7 @@ app.add_middleware(
 )
 
 # ---------- Routers ----------
-from .routers import (alertas, auth_routes, dashboard, health, oficinas,
+from .routers import (admin, alertas, auth_routes, dashboard, health, oficinas,
                       ordem_servico, planos, timeline, upload, veiculos)
 
 API = "/api"
@@ -70,6 +70,7 @@ app.include_router(timeline.router, prefix=API)
 app.include_router(dashboard.router, prefix=API)
 app.include_router(alertas.router, prefix=API)
 app.include_router(upload.router, prefix=API)
+app.include_router(admin.router, prefix=API)
 
 
 # ---------- Frontend estático (build do Vite) ----------

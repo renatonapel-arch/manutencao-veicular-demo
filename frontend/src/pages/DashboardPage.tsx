@@ -41,7 +41,9 @@ export default function DashboardPage() {
         <div className="kpi-card">
           <div className="text-[10px] uppercase tracking-wider text-ink-500">CPK acumulado</div>
           <div className="text-2xl font-bold mt-1 font-mono text-naval">{fmtBRL(dash.cpk_acumulado_ytd)}<span className="text-sm font-normal text-ink-400">/km</span></div>
-          <div className="text-[11px] text-success-fg mt-1">▼ {dash.cpk_variacao_pct}% vs mês anterior</div>
+          <div className={`text-[11px] mt-1 ${Number(dash.cpk_variacao_pct) < 0 ? 'text-success-fg' : Number(dash.cpk_variacao_pct) > 0 ? 'text-danger-fg' : 'text-ink-500'}`}>
+            {Number(dash.cpk_variacao_pct) === 0 ? 'sem baseline mês anterior' : `${Number(dash.cpk_variacao_pct) < 0 ? '▼' : '▲'} ${Math.abs(Number(dash.cpk_variacao_pct))}% vs mês anterior`}
+          </div>
         </div>
         <div className="kpi-card">
           <div className="text-[10px] uppercase tracking-wider text-ink-500">Custo total no mês</div>

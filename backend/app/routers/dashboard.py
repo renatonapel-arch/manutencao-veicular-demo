@@ -153,9 +153,21 @@ def dashboard(
         {"nome": n, "count": int(c), "custo_total": float(v)} for n, c, v in top_o_rows
     ]
 
+    # Variação % do custo do mês atual vs mês anterior (cálculo real, sem mock)
+    inicio_mes_anterior = (inicio_mes - timedelta(days=1)).replace(day=1)
+    custo_mes_anterior = base.filter(
+        OrdemServico.status == StatusOsEnum.encerrada,
+        OrdemServico.data_encerramento >= inicio_mes_anterior,
+        OrdemServico.data_encerramento < inicio_mes,
+    ).with_entities(func.coalesce(func.sum(OrdemServico.valor_total), 0)).scalar() or Decimal("0")
+    if custo_mes_anterior > 0:
+        variacao = ((Decimal(str(custo_mes)) - Decimal(str(custo_mes_anterior))) / Decimal(str(custo_mes_anterior)) * 100).quantize(Decimal("0.1"))
+    else:
+        variacao = Decimal("0")
+
     return DashboardFilial(
         cpk_acumulado_ytd=cpk,
-        cpk_variacao_pct=Decimal("-4.0"),  # mock — V2 calcula vs ano anterior
+        cpk_variacao_pct=variacao,
         custo_total_mes=Decimal(str(custo_mes)),
         os_no_mes=count_mes, ticket_medio=ticket_medio_mes.quantize(Decimal("0.01")),
         maior_os_mes=Decimal(str(maior_mes)),
