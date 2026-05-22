@@ -80,7 +80,9 @@ def get_timeline(veiculo_id: int, user: User = Depends(get_current_user), db: Se
             ref_id=v.id,
         ))
 
-    items.sort(key=lambda x: x.data, reverse=True)
+    # Normaliza tzinfo: trocas de óleo vêm tz-aware (timestamptz) e itens CRLV/OS
+    # podem ser tz-naive — comparar os dois crasha. Achata pra naive só na ordenação.
+    items.sort(key=lambda x: x.data.replace(tzinfo=None), reverse=True)
 
     # KPIs
     total_os = sum(1 for i in items if i.tipo == "os_manutencao")
