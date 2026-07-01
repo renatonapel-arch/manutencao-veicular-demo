@@ -368,7 +368,7 @@ class AuditoriaOs(Base):
     # SQLite só auto-increment INTEGER PK; BigInteger não.
     id = Column(Integer, primary_key=True, autoincrement=True)
     os_id = Column(Integer)
-    operacao = Column(String(20), nullable=False)
+    operacao = Column(String(80), nullable=False)  # "status:aguardando_orcamento->aguardando_aprovacao" = 45+ chars
     user_id = Column(Integer)
     filial_id = Column(Integer)
     before_data = Column(JSONB)

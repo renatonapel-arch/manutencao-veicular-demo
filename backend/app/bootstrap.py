@@ -63,6 +63,7 @@ _MIGRATIONS_V3 = [
     "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS tipo_destino varchar(24) NOT NULL DEFAULT 'oficina_terceirizada'",
     "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS motivo_aprovacao varchar(16)",
     "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS motivo_reprovacao text",
+    "ALTER TABLE auditoria_os ALTER COLUMN operacao TYPE varchar(80)",
     "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS descricao_itens_original text",
     "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS pipefy_card_id varchar(20)",
     "CREATE UNIQUE INDEX IF NOT EXISTS ix_os_pipefy_card_id ON os_manutencao(pipefy_card_id)",
