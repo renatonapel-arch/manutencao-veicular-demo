@@ -92,6 +92,9 @@ async def autorizar_transicao(
     if membro.papel == "mecanico_interno":
         if os.tipo_destino != "mecanico_interno":
             raise HTTPException(403, "OS não é para mecânico interno")
+        # Não aprova orçamento — decisão de gestor (filial_responsavel/admin)
+        if os.status == "aguardando_aprovacao":
+            raise HTTPException(403, "Mecânico não aprova orçamento")
         if novo_status not in {"em_execucao", "aguardando_peca", "encerrada"}:
             raise HTTPException(403, "Mecânico não pode fazer essa transição")
         return

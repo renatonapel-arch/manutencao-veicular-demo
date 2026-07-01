@@ -35,14 +35,16 @@ def _to_async_url(url: str) -> str:
 
 DATABASE_URL_ASYNC = _to_async_url(settings.DATABASE_URL)
 
-engine = create_async_engine(
-    DATABASE_URL_ASYNC,
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,
-    pool_recycle=3600,
-    future=True,
-)
+# SQLite não aceita pool_size/max_overflow — só engines Postgres/MySQL.
+_is_sqlite = DATABASE_URL_ASYNC.startswith("sqlite")
+_engine_kwargs: dict = {"future": True}
+if not _is_sqlite:
+    _engine_kwargs.update({
+        "pool_size": 10, "max_overflow": 20,
+        "pool_pre_ping": True, "pool_recycle": 3600,
+    })
+
+engine = create_async_engine(DATABASE_URL_ASYNC, **_engine_kwargs)
 
 SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
     bind=engine,

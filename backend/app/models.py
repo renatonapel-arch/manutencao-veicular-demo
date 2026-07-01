@@ -364,7 +364,9 @@ class IdempotencyKey(Base):
 class AuditoriaOs(Base):
     __tablename__ = "auditoria_os"
 
-    id = Column(BigInteger, primary_key=True)
+    # Integer basta (max 2.1B ~ 5000 anos de OSs na escala Napel).
+    # SQLite só auto-increment INTEGER PK; BigInteger não.
+    id = Column(Integer, primary_key=True, autoincrement=True)
     os_id = Column(Integer)
     operacao = Column(String(20), nullable=False)
     user_id = Column(Integer)
