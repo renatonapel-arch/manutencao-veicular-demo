@@ -143,14 +143,15 @@ async def trigger_import_pipefy(
     args = [_sys.executable, str(script)]
     if dry_run:
         args.append("--dry-run")
-    # Fire-and-forget: rodar em subprocess pra não bloquear o event loop
+    # Fire-and-forget com log em arquivo (PIPE sem leitor trava/perde output)
+    logf = open("/tmp/import_pipefy.log", "ab")
     proc = await asyncio.create_subprocess_exec(
-        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        *args, stdout=logf, stderr=subprocess.STDOUT,
     )
     return {
         "ok": True, "pid": proc.pid, "dry_run": dry_run,
         "script": str(script),
-        "detail": "rodando em background; ver logs do container",
+        "detail": "rodando em background; GET /admin/script-log",
     }
 
 
@@ -174,10 +175,25 @@ async def trigger_seed_membros(
     args = [_sys.executable, str(script)]
     if dry_run:
         args.append("--dry-run")
+    logf = open("/tmp/seed_membros.log", "ab")
     proc = await asyncio.create_subprocess_exec(
-        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        *args, stdout=logf, stderr=subprocess.STDOUT,
     )
     return {"ok": True, "pid": proc.pid, "dry_run": dry_run}
+
+
+@router.get("/script-log")
+async def script_log(
+    qual: str = "import",
+    user: User = Depends(require_role(["admin"])),
+):
+    """Lê os últimos 8KB do log do script (import|seed)."""
+    from pathlib import Path as _P
+    path = _P("/tmp/import_pipefy.log" if qual == "import" else "/tmp/seed_membros.log")
+    if not path.exists():
+        return {"ok": False, "erro": "log inexistente"}
+    data = path.read_bytes()[-8192:]
+    return {"ok": True, "log": data.decode("utf-8", errors="replace")}
 
 
 @router.post("/reset-tudo-e-sync")

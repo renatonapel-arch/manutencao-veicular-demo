@@ -35,6 +35,9 @@ async def init_database_async() -> None:
 # Converte SQLEnum→varchar preservando dados, renomeia created_by,
 # adiciona colunas novas e remapeia status antigos pros 9 novos.
 _MIGRATIONS_V3 = [
+    # 0) view referencia colunas de os_manutencao → PG bloqueia ALTER TYPE.
+    #    Derruba antes; recriada no último statement.
+    "DROP VIEW IF EXISTS manutencao_garantia_ativa",
     # 1) enum PG → varchar (preserva valores)
     "ALTER TABLE os_manutencao ALTER COLUMN status TYPE varchar(24) USING status::text",
     "ALTER TABLE os_manutencao ALTER COLUMN tipo_os TYPE varchar(24) USING tipo_os::text",
