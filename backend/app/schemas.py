@@ -106,23 +106,35 @@ class AnexoOut(BaseModel):
 
 
 # ---------- Ordem de Serviço ----------
+CATEGORIA_LITERAL = Literal[
+    "Motor", "Pneu", "Pastilha / Lona", "Relação", "Lâmpadas",
+    "Elétrica", "Bateria", "Empilhadeira", "Embreagem", "Outros",
+]
+URGENCIA_LITERAL = Literal["parado", "roda_com_reparo", "cosmetico"]
+DESTINO_LITERAL = Literal["oficina_terceirizada", "mecanico_interno", "concessionaria"]
+
+
 class OrdemServicoCreate(BaseModel):
     request_id: UUID
     veiculo_id: int
-    tipo_os: Literal["corretiva_manual", "corretiva_checklist", "preventiva_automatica", "devolucao"]
+    tipo_os: Literal[
+        "corretiva_manual", "corretiva_checklist", "preventiva_automatica",
+        "devolucao", "sinistro", "recall",
+    ]
     oficina_id: Optional[int] = None
     km_veiculo: int = Field(ge=0, le=10_000_000)
     descricao_problema: Optional[str] = None
     data_agendada: Optional[date] = None
     prazo_estimado_dias: Optional[int] = None
+    categoria: Optional[CATEGORIA_LITERAL] = None
+    urgencia: Optional[URGENCIA_LITERAL] = None
+    tipo_destino: DESTINO_LITERAL = "oficina_terceirizada"
+    funcionario_relator_id: Optional[int] = None
     itens: List[ItemLinhaIn] = []
 
 
 class OrdemServicoUpdate(BaseModel):
-    status: Optional[Literal[
-        "rascunho", "aberta", "aguardando_anexos", "pronta_execucao",
-        "em_execucao", "encerrada", "cancelada",
-    ]] = None
+    # v3: transições de status vão pelos endpoints POST /os/{id}/{acao}
     oficina_id: Optional[int] = None
     descricao_problema: Optional[str] = None
     garantia_peca_dias: Optional[int] = None
@@ -130,6 +142,9 @@ class OrdemServicoUpdate(BaseModel):
     garantia_observacoes: Optional[str] = None
     desconto_ajuste: Optional[Decimal] = None
     motivo_cancelamento: Optional[str] = None
+    categoria: Optional[CATEGORIA_LITERAL] = None
+    urgencia: Optional[URGENCIA_LITERAL] = None
+    tipo_destino: Optional[DESTINO_LITERAL] = None
 
 
 class OrdemServicoOut(BaseModel):
@@ -139,6 +154,9 @@ class OrdemServicoOut(BaseModel):
     filial_id: int
     tipo_os: str
     status: str
+    categoria: Optional[str] = None
+    urgencia: Optional[str] = None
+    tipo_destino: str = "oficina_terceirizada"
     data_abertura: datetime
     data_encerramento: Optional[datetime] = None
     data_agendada: Optional[date] = None
@@ -151,7 +169,14 @@ class OrdemServicoOut(BaseModel):
     garantia_peca_dias: Optional[int] = None
     garantia_servico_dias: Optional[int] = None
     descricao_problema: Optional[str] = None
-    created_by: int
+    descricao_itens_original: Optional[str] = None
+    pipefy_card_id: Optional[str] = None
+    aprovado_por_user_id: Optional[int] = None
+    aprovado_em: Optional[datetime] = None
+    motivo_aprovacao: Optional[str] = None
+    reaberta_de_os_id: Optional[int] = None
+    aberto_por_user_id: int
+    funcionario_relator_id: Optional[int] = None
     updated_at: datetime
     # Campos derivados (preenchidos no router pra evitar lookups extras no front)
     veiculo_placa: Optional[str] = None

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth import get_redis
 from ..config import settings
@@ -10,11 +10,11 @@ router = APIRouter(tags=["health"])
 
 
 @router.get("/health")
-def health(db: Session = Depends(get_db)):
+async def health(db: AsyncSession = Depends(get_db)):
     db_ok = False
     redis_ok = False
     try:
-        db.execute(text("SELECT 1"))
+        await db.execute(text("SELECT 1"))
         db_ok = True
     except Exception:
         pass

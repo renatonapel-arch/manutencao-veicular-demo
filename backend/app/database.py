@@ -1,24 +1,66 @@
-"""Engine + Session + Base SQLAlchemy."""
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+"""Engine + Session + Base SQLAlchemy — padrão async (idêntico ao Clavis).
+
+Aceita `DATABASE_URL` em qualquer formato:
+- postgresql://user:pass@host/db          → convertida para asyncpg
+- postgresql+asyncpg://user:pass@host/db  → usada direta
+- postgresql+psycopg2://...               → convertida para asyncpg
+
+O driver sync (psycopg2) fica disponível como fallback exclusivamente para
+o Alembic (ver env.py) — todo runtime é 100% async.
+"""
+from __future__ import annotations
+
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.orm import declarative_base
 
 from .config import settings
 
-engine = create_engine(
-    settings.DATABASE_URL,
-    pool_size=10,
-    max_overflow=20,
-    pool_pre_ping=True,
-    pool_recycle=3600,
+
+def _to_async_url(url: str) -> str:
+    """Garante driver asyncpg. Idempotente."""
+    if url.startswith("postgresql+asyncpg://"):
+        return url
+    if url.startswith("postgresql+psycopg2://"):
+        return url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
+    if url.startswith("postgresql://"):
+        return url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
+
+DATABASE_URL_ASYNC = _to_async_url(settings.DATABASE_URL)
+
+# SQLite não aceita pool_size/max_overflow — só engines Postgres/MySQL.
+_is_sqlite = DATABASE_URL_ASYNC.startswith("sqlite")
+_engine_kwargs: dict = {"future": True}
+if not _is_sqlite:
+    _engine_kwargs.update({
+        "pool_size": 10, "max_overflow": 20,
+        "pool_pre_ping": True, "pool_recycle": 3600,
+    })
+
+engine = create_async_engine(DATABASE_URL_ASYNC, **_engine_kwargs)
+
+SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False,
 )
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Dependency FastAPI. Fecha a sessão automaticamente."""
+    async with SessionLocal() as db:
+        try:
+            yield db
+        finally:
+            await db.close()

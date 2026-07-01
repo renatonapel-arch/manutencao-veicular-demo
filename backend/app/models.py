@@ -1,16 +1,17 @@
-"""Schema completo do módulo Manutenção Veicular (12 tabelas + enums).
+"""Schema completo do módulo Manutenção Veicular (13 tabelas).
 
-Match com docs/spec.md seção 3 (Schema do banco) e arquitetura.md ADRs 02, 03, 04, 08, 09.
+Padrão Clavis: `String(N) + CheckConstraint` no lugar de `SQLEnum` (todos os
+módulos do Clavis fazem assim — `SQLEnum` no Postgres tem migração frágil).
+
+Match com docs/spec.md seção 3 e ADRs 02, 03, 04, 08, 09.
 """
 from __future__ import annotations
 
-import enum
 import uuid
-from datetime import datetime
 
 from sqlalchemy import (
     BigInteger, Boolean, CheckConstraint, Column, Date, DateTime,
-    Enum as SQLEnum, ForeignKey, Index, Integer, Numeric, String, Text,
+    ForeignKey, Index, Integer, Numeric, String, Text,
     UniqueConstraint, func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -19,35 +20,75 @@ from sqlalchemy.orm import relationship
 from .database import Base
 
 
-# ---------- Enums ----------
-class TipoOsEnum(str, enum.Enum):
-    corretiva_manual = "corretiva_manual"
-    corretiva_checklist = "corretiva_checklist"
-    preventiva_automatica = "preventiva_automatica"
-    devolucao = "devolucao"
+# ---------- Vocabulário de String-enums (validado por CheckConstraint) ----------
+
+TIPO_OS_VALORES = (
+    "corretiva_manual",
+    "corretiva_checklist",
+    "preventiva_automatica",
+    "devolucao",
+    "sinistro",   # v3: pipefy Custos - Sinistros
+    "recall",     # v3: pipefy Custos - Recalls
+)
+
+STATUS_OS_VALORES = (
+    "rascunho",
+    "aberta",
+    "em_triagem",              # NOVO (v3)
+    "aguardando_orcamento",    # renomeia aguardando_anexos
+    "aguardando_aprovacao",    # NOVO (v3)
+    "em_execucao",             # aprovada + em execução
+    "aguardando_peca",         # NOVO (v3)
+    "encerrada",
+    "cancelada",
+)
+
+TIPO_ANEXO_VALORES = (
+    "foto_hodometro",
+    "foto_problema",
+    "foto_pneu",     # v3: TWI, com posicao_pneu
+    "nf",
+    "orcamento",
+    "comprovante_pagamento",
+)
+
+TIPO_ITEM_VALORES = ("peca", "servico", "ajuste")
+
+URGENCIA_VALORES = ("parado", "roda_com_reparo", "cosmetico")
+
+TIPO_DESTINO_VALORES = ("oficina_terceirizada", "mecanico_interno", "concessionaria")
+
+CATEGORIA_VALORES = (
+    # 10 valores do campo "Tipo" do pipe Custos - Manutenção Veiculos (Pipefy)
+    "Motor", "Pneu", "Pastilha / Lona", "Relação", "Lâmpadas",
+    "Elétrica", "Bateria", "Empilhadeira", "Embreagem", "Outros",
+)
+
+MOTIVO_APROVACAO_VALORES = ("manual", "auto")
+
+PAPEL_MEMBRO_VALORES = (
+    "admin",
+    "filial_responsavel",
+    "motorista",
+    "mecanico_interno",
+    "admin_oficinas",
+    "financeiro",
+)
+
+POSICAO_PNEU_VALORES = (
+    "unico",                    # moto (sem lados)
+    "dianteiro_motorista",
+    "dianteiro_passageiro",
+    "traseiro_motorista",
+    "traseiro_passageiro",
+    "dianteiro", "traseiro",    # moto simplificada
+)
 
 
-class StatusOsEnum(str, enum.Enum):
-    rascunho = "rascunho"
-    aberta = "aberta"
-    aguardando_anexos = "aguardando_anexos"
-    pronta_execucao = "pronta_execucao"
-    em_execucao = "em_execucao"
-    encerrada = "encerrada"
-    cancelada = "cancelada"
-
-
-class TipoAnexoEnum(str, enum.Enum):
-    foto_hodometro = "foto_hodometro"
-    foto_problema = "foto_problema"
-    nf = "nf"
-    orcamento = "orcamento"
-
-
-class TipoItemEnum(str, enum.Enum):
-    peca = "peca"
-    servico = "servico"
-    ajuste = "ajuste"
+def _check_in(coluna: str, valores: tuple[str, ...], nome: str) -> CheckConstraint:
+    """Helper para gerar CheckConstraint `coluna IN ('a','b',...)`."""
+    lista = ",".join(f"'{v}'" for v in valores)
+    return CheckConstraint(f"{coluna} IN ({lista})", name=nome)
 
 
 # ---------- User (auth seed) ----------
@@ -66,14 +107,34 @@ class User(Base):
     last_login_at = Column(DateTime(timezone=True))
 
 
+# ---------- Membro da Manutenção (mapeia user → papel do módulo) ----------
+class MembroManutencao(Base):
+    """Amarra User (Clavis) ↔ papel na manutenção ↔ filial ↔ funcionario (Sólides).
+
+    Um user pode ter mais de uma linha se cobre várias filiais.
+    """
+    __tablename__ = "manutencao_membro"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False, index=True)
+    filial_id = Column(Integer, nullable=False, index=True)
+    papel = Column(String(24), nullable=False)
+    funcionario_id = Column(Integer, nullable=True)  # ID Sólides
+    ativo = Column(Boolean, default=True, nullable=False)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "filial_id", name="uq_membro_user_filial"),
+        _check_in("papel", PAPEL_MEMBRO_VALORES, "ck_membro_papel"),
+    )
+
+
 # ---------- Veículos (read-only cache do Controle Patrimonial) ----------
 class VeiculoSnapshot(Base):
     __tablename__ = "veiculo_snapshot"
 
     id = Column(Integer, primary_key=True)
     veiculo_patrimonial_id = Column(Integer, unique=True, nullable=False)
-    # UUID hex usado pela Frota (frota.demos.napel.com.br) e app Troca de Óleo
-    # como chave global do veículo cross-módulo
     frota_external_id = Column(String(64), unique=True, index=True)
     placa = Column(String(10), unique=True, nullable=False)
     modelo = Column(String(100), nullable=False)
@@ -90,23 +151,25 @@ class VeiculoSnapshot(Base):
     __table_args__ = (
         Index("idx_veiculo_filial", "filial_id", "modelo"),
         CheckConstraint("km_atual >= 0 AND km_atual <= 10000000", name="ck_km_range"),
+        _check_in("tipo", ("moto", "carro", "empilhadeira"), "ck_veiculo_tipo"),
     )
 
 
-# ---------- Oficinas (catálogo padronizado — texto livre bloqueado) ----------
+# ---------- Oficinas (catálogo padronizado) ----------
 class OficinaPadronizada(Base):
     __tablename__ = "oficina_padronizada"
 
     id = Column(Integer, primary_key=True)
     nome = Column(String(120), nullable=False)
+    nome_normalizado = Column(String(120), index=True)  # v3: p/ dedup ("DIDA", "DIDA MOTOS" → "DIDA")
     cnpj = Column(String(20), unique=True)
     telefone = Column(String(30))
     cidade = Column(String(80))
     uf = Column(String(2))
     regiao_filial = Column(String(50))
-    especialidade = Column(String(40))  # moto | carro | pneu | empilhadeira
+    especialidade = Column(String(40))
     valor_servico_padrao = Column(Numeric(10, 2))
-    avaliacao = Column(Numeric(3, 1))  # 0.0 a 5.0
+    avaliacao = Column(Numeric(3, 1))
     filial_id_preferencial = Column(Integer)
     ativa = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -117,17 +180,23 @@ class OficinaPadronizada(Base):
     )
 
 
-# ---------- OS-Manutenção (entidade central) ----------
+# ---------- OS-Manutenção (entidade central, v3) ----------
 class OrdemServico(Base):
     __tablename__ = "os_manutencao"
 
     id = Column(Integer, primary_key=True)
     request_id = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
+
+    # Import dedupe (v3: Pipefy Custos - Manutenção Veiculos)
+    pipefy_card_id = Column(String(20), unique=True, index=True, nullable=True)
+
     veiculo_id = Column(Integer, ForeignKey("veiculo_snapshot.id"), nullable=False)
     filial_id = Column(Integer, nullable=False)
-    tipo_os = Column(SQLEnum(TipoOsEnum, name="tipo_os_enum"), nullable=False)
-    status = Column(SQLEnum(StatusOsEnum, name="status_os_enum"),
-                    default=StatusOsEnum.rascunho, nullable=False)
+    tipo_os = Column(String(24), nullable=False)
+    status = Column(String(24), default="rascunho", nullable=False)
+    categoria = Column(String(20), nullable=True)         # v3: campo Tipo do pipe
+    urgencia = Column(String(20), nullable=True)          # v3
+    tipo_destino = Column(String(24), default="oficina_terceirizada", nullable=False)  # v3
 
     data_abertura = Column(DateTime(timezone=True), server_default=func.now())
     data_encerramento = Column(DateTime(timezone=True))
@@ -135,12 +204,12 @@ class OrdemServico(Base):
     prazo_estimado_dias = Column(Integer)
 
     km_veiculo = Column(Integer, nullable=False)
-    km_api_snapshot = Column(Integer)  # snapshot do Patrimonial no momento
+    km_api_snapshot = Column(Integer)
 
-    oficina_id = Column(Integer, ForeignKey("oficina_padronizada.id"))
+    oficina_id = Column(Integer, ForeignKey("oficina_padronizada.id"), nullable=True)
     valor_total = Column(Numeric(12, 2), default=0, nullable=False)
     desconto_ajuste = Column(Numeric(10, 2), default=0)
-    economia_napel_total = Column(Numeric(10, 2), default=0)  # V2
+    economia_napel_total = Column(Numeric(10, 2), default=0)
 
     garantia_peca_dias = Column(Integer)
     garantia_servico_dias = Column(Integer)
@@ -148,9 +217,24 @@ class OrdemServico(Base):
     descricao_problema = Column(Text)
     observacoes_internas = Column(Text)
 
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # v3: Texto livre migrado do pipe ("Qtdes Peças/Serviços Trocadas")
+    descricao_itens_original = Column(Text, nullable=True)
+
+    # v3: Aprovação
+    aprovado_por_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    aprovado_em = Column(DateTime(timezone=True))
+    motivo_aprovacao = Column(String(16), nullable=True)   # None | 'manual' | 'auto'
+    motivo_reprovacao = Column(Text)
+
+    # v3: Reabertura em garantia (vínculo, não estado)
+    reaberta_de_os_id = Column(Integer, ForeignKey("os_manutencao.id"), nullable=True)
+
+    # v3: Identidades — quem operou vs quem é sujeito
+    aberto_por_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    funcionario_relator_id = Column(Integer, nullable=True)  # ID Sólides
+
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    deleted_at = Column(DateTime(timezone=True))
+    deleted_at = Column(DateTime(timezone=True), index=True)  # v3: index p/ helper _ativas
 
     veiculo = relationship("VeiculoSnapshot")
     oficina = relationship("OficinaPadronizada")
@@ -161,6 +245,21 @@ class OrdemServico(Base):
         Index("idx_os_filial_status_data", "filial_id", "status", "data_abertura"),
         Index("idx_os_veiculo_data", "veiculo_id", "data_abertura"),
         CheckConstraint("km_veiculo >= 0 AND km_veiculo <= 10000000", name="ck_km_os_range"),
+        _check_in("tipo_os", TIPO_OS_VALORES, "ck_os_tipo"),
+        _check_in("status", STATUS_OS_VALORES, "ck_os_status"),
+        _check_in("tipo_destino", TIPO_DESTINO_VALORES, "ck_os_tipo_destino"),
+        CheckConstraint(
+            f"urgencia IS NULL OR urgencia IN ({','.join(repr(v) for v in URGENCIA_VALORES)})",
+            name="ck_os_urgencia",
+        ),
+        CheckConstraint(
+            f"categoria IS NULL OR categoria IN ({','.join(repr(v) for v in CATEGORIA_VALORES)})",
+            name="ck_os_categoria",
+        ),
+        CheckConstraint(
+            f"motivo_aprovacao IS NULL OR motivo_aprovacao IN ({','.join(repr(v) for v in MOTIVO_APROVACAO_VALORES)})",
+            name="ck_os_motivo_aprovacao",
+        ),
     )
 
 
@@ -170,31 +269,34 @@ class OsItemLinha(Base):
 
     id = Column(Integer, primary_key=True)
     os_id = Column(Integer, ForeignKey("os_manutencao.id", ondelete="CASCADE"), nullable=False)
-    tipo_item = Column(SQLEnum(TipoItemEnum, name="tipo_item_enum"), nullable=False)
+    tipo_item = Column(String(16), nullable=False)
     descricao = Column(String(200), nullable=False)
-    sige_peca_id = Column(Integer)  # V2: FK pra sige_peca_staging quando ativado
+    sige_peca_id = Column(Integer)
     sige_sku = Column(String(40))
     quantidade = Column(Numeric(10, 3), default=1, nullable=False)
     valor_unitario = Column(Numeric(10, 2), nullable=False)
     subtotal = Column(Numeric(12, 2), nullable=False)
     garantia_dias = Column(Integer, default=0)
-    economia_napel = Column(Numeric(10, 2))  # V2: lookup ML vs preço Napel
+    economia_napel = Column(Numeric(10, 2))
 
     os = relationship("OrdemServico", back_populates="itens")
 
     __table_args__ = (
         Index("idx_os_item_os", "os_id"),
         Index("idx_os_item_sige", "sige_sku"),
+        Index("idx_item_garantia_ativa", "os_id", "garantia_dias"),  # v3: para expirar_garantias
+        _check_in("tipo_item", TIPO_ITEM_VALORES, "ck_item_tipo"),
     )
 
 
-# ---------- Anexos (foto + NF obrigatórias) ----------
+# ---------- Anexos ----------
 class AnexosOs(Base):
     __tablename__ = "anexos_os"
 
     id = Column(Integer, primary_key=True)
     os_id = Column(Integer, ForeignKey("os_manutencao.id", ondelete="CASCADE"), nullable=False)
-    tipo = Column(SQLEnum(TipoAnexoEnum, name="tipo_anexo_enum"), nullable=False)
+    tipo = Column(String(24), nullable=False)
+    posicao_pneu = Column(String(24), nullable=True)  # v3: usado quando tipo=foto_pneu
     arquivo_url = Column(Text, nullable=False)
     file_hash = Column(String(64))
     size_bytes = Column(BigInteger)
@@ -205,7 +307,14 @@ class AnexosOs(Base):
 
     os = relationship("OrdemServico", back_populates="anexos")
 
-    __table_args__ = (Index("idx_anexos_os", "os_id", "tipo"),)
+    __table_args__ = (
+        Index("idx_anexos_os", "os_id", "tipo"),
+        _check_in("tipo", TIPO_ANEXO_VALORES, "ck_anexo_tipo"),
+        CheckConstraint(
+            f"posicao_pneu IS NULL OR posicao_pneu IN ({','.join(repr(v) for v in POSICAO_PNEU_VALORES)})",
+            name="ck_anexo_posicao_pneu",
+        ),
+    )
 
 
 # ---------- Planos preventivos ----------
@@ -214,7 +323,7 @@ class PlanoPreventiva(Base):
 
     id = Column(Integer, primary_key=True)
     modelo_veiculo = Column(String(100), nullable=False)
-    item = Column(String(120), nullable=False)  # "Filtro de ar", "Pastilha freio"
+    item = Column(String(120), nullable=False)
     descricao = Column(Text)
     km_intervalo = Column(Integer)
     dias_intervalo = Column(Integer)
@@ -223,7 +332,7 @@ class PlanoPreventiva(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-# ---------- Preventivas geradas (dedup por modelo+plano+ano+mes) ----------
+# ---------- Preventivas geradas ----------
 class PreventivaGerada(Base):
     __tablename__ = "preventiva_gerada"
 
@@ -231,7 +340,7 @@ class PreventivaGerada(Base):
     veiculo_id = Column(Integer, ForeignKey("veiculo_snapshot.id"), nullable=False)
     plano_id = Column(Integer, ForeignKey("plano_preventiva.id"), nullable=False)
     os_id = Column(Integer, ForeignKey("os_manutencao.id"))
-    ano_mes = Column(String(7), nullable=False)  # 'YYYY-MM'
+    ano_mes = Column(String(7), nullable=False)
     data_geracao = Column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (
@@ -251,13 +360,15 @@ class IdempotencyKey(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-# ---------- Auditoria (LGPD + rastreabilidade) ----------
+# ---------- Auditoria ----------
 class AuditoriaOs(Base):
     __tablename__ = "auditoria_os"
 
-    id = Column(BigInteger, primary_key=True)
+    # Integer basta (max 2.1B ~ 5000 anos de OSs na escala Napel).
+    # SQLite só auto-increment INTEGER PK; BigInteger não.
+    id = Column(Integer, primary_key=True, autoincrement=True)
     os_id = Column(Integer)
-    operacao = Column(String(20), nullable=False)  # INSERT | UPDATE | DELETE | STATUS
+    operacao = Column(String(20), nullable=False)
     user_id = Column(Integer)
     filial_id = Column(Integer)
     before_data = Column(JSONB)
@@ -273,7 +384,7 @@ class AuditoriaOs(Base):
     )
 
 
-# ---------- Cache trocas de óleo (read-only do app dedicado) ----------
+# ---------- Cache trocas de óleo ----------
 class TrocaOleoCache(Base):
     __tablename__ = "troca_oleo_cache"
 
@@ -292,7 +403,7 @@ class TrocaOleoCache(Base):
     __table_args__ = (Index("idx_troca_oleo_veiculo", "veiculo_id", "data_troca"),)
 
 
-# ---------- SIGE staging (vazio no MVP, ativado V2) ----------
+# ---------- SIGE staging ----------
 class SigePecaStaging(Base):
     __tablename__ = "sige_peca_staging"
 
@@ -300,13 +411,13 @@ class SigePecaStaging(Base):
     codigo_sige = Column(String(50), unique=True, nullable=False)
     descricao = Column(String(200), nullable=False)
     preco_custo = Column(Numeric(10, 2))
-    preco_mercado_ml = Column(Numeric(10, 2))  # cache ML
+    preco_mercado_ml = Column(Numeric(10, 2))
     estoque_atual = Column(Integer)
-    eh_napel = Column(Boolean, default=False)  # peça Napel (suspensão/freio)
+    eh_napel = Column(Boolean, default=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-# ---------- Alertas WhatsApp (Evolution) ----------
+# ---------- Alertas WhatsApp ----------
 class AlertaHistory(Base):
     __tablename__ = "alert_history"
 
@@ -314,7 +425,7 @@ class AlertaHistory(Base):
     os_id = Column(Integer, ForeignKey("os_manutencao.id"))
     veiculo_id = Column(Integer, ForeignKey("veiculo_snapshot.id"))
     filial_id = Column(Integer)
-    tipo_alerta = Column(String(40), nullable=False)  # preventiva_proxima | os_aberta_dias | custo_fora_padrao | manual
+    tipo_alerta = Column(String(40), nullable=False)  # preventiva_km | preventiva_data | documento | recall | checklist_atrasado | garantia | manual
     telefone = Column(String(30), nullable=False)
     template_name = Column(String(80), nullable=False)
     mensagem = Column(Text)

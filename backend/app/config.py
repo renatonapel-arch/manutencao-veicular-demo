@@ -20,8 +20,16 @@ class Settings(BaseSettings):
     # Integrações reais (Fase C — apps já no ar na VPS Napel)
     FROTA_BASE_URL: str = "https://frota.demos.napel.com.br"
     FROTA_TOKEN: str = "1234"
+
+    # Troca de Óleo — v3 usa X-Sync-Secret (não PIN)
+    # Aliases: TROCA_OLEO_URL/TROCA_OLEO_SYNC_SECRET (usados pelo Clavis)
     OLEO_BASE_URL: str = "https://troca-oleo.demos.napel.com.br"
-    OLEO_PIN: str = "9999"
+    OLEO_PIN: str = "9999"  # deprecated — mantido por compat
+    TROCA_OLEO_URL: str = "https://troca-oleo.napel.com.br"
+    TROCA_OLEO_SYNC_SECRET: str = ""
+
+    # Pipefy — import histórico
+    PIPEFY_TOKEN: str = ""
 
     # Notifier central da Napel (event-driven · respeita janela 22-06 BRT)
     NOTIFIER_URL: str = "http://195.35.19.31:18200"

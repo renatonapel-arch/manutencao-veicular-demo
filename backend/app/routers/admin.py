@@ -1,40 +1,48 @@
-"""Endpoints admin — reset + sync com apps Frota e Troca de Óleo."""
+"""Endpoints admin — reset + sync com apps Frota e Troca de Óleo (async)."""
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy import delete, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..dependencies import require_role
 from ..integrations.oleo_client import sync_trocas_oleo
 from ..integrations.patrimonial_client import sync_veiculos
-from ..models import (AlertaHistory, AnexosOs, AuditoriaOs, IdempotencyKey,
-                      OficinaPadronizada, OrdemServico, OsItemLinha,
-                      PlanoPreventiva, PreventivaGerada, TrocaOleoCache,
-                      User, VeiculoSnapshot)
+from ..models import (
+    AlertaHistory, AnexosOs, AuditoriaOs, IdempotencyKey, OficinaPadronizada,
+    OrdemServico, OsItemLinha, PlanoPreventiva, PreventivaGerada,
+    TrocaOleoCache, User, VeiculoSnapshot,
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-@router.post("/reset-operacional")
-def reset_dados_operacionais(
-    user: User = Depends(require_role(["admin"])),
-    db: Session = Depends(get_db),
-):
-    """Apaga TODOS os dados operacionais (OS, anexos, auditoria, alertas, cache).
+async def _delete_all(db: AsyncSession, model) -> int:
+    result = await db.execute(delete(model))
+    return int(result.rowcount or 0)
 
-    Mantém: usuários (auth), veículos (cache Patrimonial), oficinas (catálogo padronizado),
-    planos preventivos (configuração base).
-    """
+
+async def _count(db: AsyncSession, model) -> int:
+    stmt = select(func.count()).select_from(model)
+    return int((await db.execute(stmt)).scalar_one())
+
+
+@router.post("/reset-operacional")
+async def reset_dados_operacionais(
+    user: User = Depends(require_role(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """Apaga TODOS os dados operacionais. Mantém users, veículos, oficinas, planos."""
     apagados = {
-        "anexos_os":       db.query(AnexosOs).delete(synchronize_session=False),
-        "os_item_linha":   db.query(OsItemLinha).delete(synchronize_session=False),
-        "auditoria_os":    db.query(AuditoriaOs).delete(synchronize_session=False),
-        "alert_history":   db.query(AlertaHistory).delete(synchronize_session=False),
-        "idempotency_keys":db.query(IdempotencyKey).delete(synchronize_session=False),
-        "preventiva_gerada":db.query(PreventivaGerada).delete(synchronize_session=False),
-        "troca_oleo_cache":db.query(TrocaOleoCache).delete(synchronize_session=False),
-        "os_manutencao":   db.query(OrdemServico).delete(synchronize_session=False),
+        "anexos_os":       await _delete_all(db, AnexosOs),
+        "os_item_linha":   await _delete_all(db, OsItemLinha),
+        "auditoria_os":    await _delete_all(db, AuditoriaOs),
+        "alert_history":   await _delete_all(db, AlertaHistory),
+        "idempotency_keys":await _delete_all(db, IdempotencyKey),
+        "preventiva_gerada":await _delete_all(db, PreventivaGerada),
+        "troca_oleo_cache":await _delete_all(db, TrocaOleoCache),
+        "os_manutencao":   await _delete_all(db, OrdemServico),
     }
-    db.commit()
+    await db.commit()
     return {
         "ok": True, "operacao": "reset-operacional", "apagados": apagados,
         "mantidos": ["users", "veiculo_snapshot", "oficina_padronizada", "plano_preventiva"],
@@ -43,99 +51,152 @@ def reset_dados_operacionais(
 
 
 @router.post("/reset-planos")
-def reset_planos(
+async def reset_planos(
     user: User = Depends(require_role(["admin"])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Apaga TODOS os planos preventivos + preventivas geradas."""
     apagados = {
-        "preventiva_gerada": db.query(PreventivaGerada).delete(synchronize_session=False),
-        "plano_preventiva":  db.query(PlanoPreventiva).delete(synchronize_session=False),
+        "preventiva_gerada": await _delete_all(db, PreventivaGerada),
+        "plano_preventiva":  await _delete_all(db, PlanoPreventiva),
     }
-    db.commit()
-    return {"ok": True, "operacao": "reset-planos", "apagados": apagados, "executado_por": user.email}
+    await db.commit()
+    return {
+        "ok": True, "operacao": "reset-planos",
+        "apagados": apagados, "executado_por": user.email,
+    }
 
 
 @router.get("/contagens")
-def contagens(user: User = Depends(require_role(["admin"])), db: Session = Depends(get_db)):
+async def contagens(
+    user: User = Depends(require_role(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
     return {
-        "users":               db.query(User).count(),
-        "veiculo_snapshot":    db.query(VeiculoSnapshot).count(),
-        "oficina_padronizada": db.query(OficinaPadronizada).count(),
-        "plano_preventiva":    db.query(PlanoPreventiva).count(),
-        "os_manutencao":       db.query(OrdemServico).count(),
-        "os_item_linha":       db.query(OsItemLinha).count(),
-        "anexos_os":           db.query(AnexosOs).count(),
-        "alert_history":       db.query(AlertaHistory).count(),
-        "troca_oleo_cache":    db.query(TrocaOleoCache).count(),
-        "auditoria_os":        db.query(AuditoriaOs).count(),
-        "preventiva_gerada":   db.query(PreventivaGerada).count(),
-        "idempotency_keys":    db.query(IdempotencyKey).count(),
+        "users":               await _count(db, User),
+        "veiculo_snapshot":    await _count(db, VeiculoSnapshot),
+        "oficina_padronizada": await _count(db, OficinaPadronizada),
+        "plano_preventiva":    await _count(db, PlanoPreventiva),
+        "os_manutencao":       await _count(db, OrdemServico),
+        "os_item_linha":       await _count(db, OsItemLinha),
+        "anexos_os":           await _count(db, AnexosOs),
+        "alert_history":       await _count(db, AlertaHistory),
+        "troca_oleo_cache":    await _count(db, TrocaOleoCache),
+        "auditoria_os":        await _count(db, AuditoriaOs),
+        "preventiva_gerada":   await _count(db, PreventivaGerada),
+        "idempotency_keys":    await _count(db, IdempotencyKey),
     }
 
 
 # ============================================================
-# Integração real — apps Frota e Troca de Óleo (Fase C)
+# Integração real
 # ============================================================
 
 @router.post("/sync-frota")
-def trigger_sync_frota(
+async def trigger_sync_frota(
     user: User = Depends(require_role(["admin"])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Pega veículos do Cadastro Veicular (frota.demos.napel.com.br) e upserta no Manutenção."""
-    result = sync_veiculos(db)
+    result = await sync_veiculos(db)
     return {"ok": True, "operacao": "sync-frota", **result}
 
 
 @router.post("/sync-oleo")
-def trigger_sync_oleo(
+async def trigger_sync_oleo(
     user: User = Depends(require_role(["admin"])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Pega trocas de óleo + odometer-logs do app Troca de Óleo.
-
-    - Trocas viram entradas em troca_oleo_cache (aparecem na timeline)
-    - KM mais recente de cada veículo atualiza VeiculoSnapshot.km_atual
-    """
-    result = sync_trocas_oleo(db)
+    result = await sync_trocas_oleo(db)
     return {"ok": True, "operacao": "sync-oleo", **result}
 
 
 @router.post("/sync-all")
-def trigger_sync_all(
+async def trigger_sync_all(
     user: User = Depends(require_role(["admin"])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Sync de tudo: primeiro Frota (precisa dos veiculos pra resolver foreign keys do óleo)."""
-    frota = sync_veiculos(db)
-    oleo = sync_trocas_oleo(db)
+    frota = await sync_veiculos(db)
+    oleo = await sync_trocas_oleo(db)
     return {"ok": True, "operacao": "sync-all", "frota": frota, "oleo": oleo}
 
 
-@router.post("/reset-tudo-e-sync")
-def reset_e_sync(
+@router.post("/import-pipefy")
+async def trigger_import_pipefy(
+    dry_run: bool = False,
     user: User = Depends(require_role(["admin"])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    """Cenário do zero: apaga TUDO (incluindo veículos e oficinas) e refaz sync com apps externos.
+    """Dispara import histórico do pipe 304827831 (Custos - Manutenção Veiculos).
 
-    Mantém só: usuários (auth) + oficinas (catálogo). Re-importa veículos da Frota
-    e trocas de óleo do app Troca de Óleo.
+    Idempotente via UNIQUE(pipefy_card_id). Roda em background — endpoint retorna
+    imediatamente com PID. Log completo em stdout do container.
     """
-    apagados = {
-        "anexos_os":         db.query(AnexosOs).delete(synchronize_session=False),
-        "os_item_linha":     db.query(OsItemLinha).delete(synchronize_session=False),
-        "auditoria_os":      db.query(AuditoriaOs).delete(synchronize_session=False),
-        "alert_history":     db.query(AlertaHistory).delete(synchronize_session=False),
-        "idempotency_keys":  db.query(IdempotencyKey).delete(synchronize_session=False),
-        "preventiva_gerada": db.query(PreventivaGerada).delete(synchronize_session=False),
-        "troca_oleo_cache":  db.query(TrocaOleoCache).delete(synchronize_session=False),
-        "os_manutencao":     db.query(OrdemServico).delete(synchronize_session=False),
-        "plano_preventiva":  db.query(PlanoPreventiva).delete(synchronize_session=False),
-        "veiculo_snapshot":  db.query(VeiculoSnapshot).delete(synchronize_session=False),
+    import asyncio
+    import subprocess
+    import sys as _sys
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "import_pipefy.py"
+    if not script.exists():
+        return {"ok": False, "erro": "script não encontrado"}
+    args = [_sys.executable, str(script)]
+    if dry_run:
+        args.append("--dry-run")
+    # Fire-and-forget: rodar em subprocess pra não bloquear o event loop
+    proc = await asyncio.create_subprocess_exec(
+        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
+    return {
+        "ok": True, "pid": proc.pid, "dry_run": dry_run,
+        "script": str(script),
+        "detail": "rodando em background; ver logs do container",
     }
-    db.commit()
-    frota = sync_veiculos(db)
-    oleo = sync_trocas_oleo(db)
-    return {"ok": True, "operacao": "reset-tudo-e-sync", "apagados": apagados, "frota": frota, "oleo": oleo}
+
+
+@router.post("/seed-membros")
+async def trigger_seed_membros(
+    dry_run: bool = False,
+    user: User = Depends(require_role(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """Popula MembroManutencao a partir dos 37 funcionários do Sólides."""
+    import asyncio
+    import subprocess
+    import sys as _sys
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "seed_membros.py"
+    if not script.exists():
+        return {"ok": False, "erro": "script não encontrado"}
+    args = [_sys.executable, str(script)]
+    if dry_run:
+        args.append("--dry-run")
+    proc = await asyncio.create_subprocess_exec(
+        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
+    return {"ok": True, "pid": proc.pid, "dry_run": dry_run}
+
+
+@router.post("/reset-tudo-e-sync")
+async def reset_e_sync(
+    user: User = Depends(require_role(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    apagados = {
+        "anexos_os":         await _delete_all(db, AnexosOs),
+        "os_item_linha":     await _delete_all(db, OsItemLinha),
+        "auditoria_os":      await _delete_all(db, AuditoriaOs),
+        "alert_history":     await _delete_all(db, AlertaHistory),
+        "idempotency_keys":  await _delete_all(db, IdempotencyKey),
+        "preventiva_gerada": await _delete_all(db, PreventivaGerada),
+        "troca_oleo_cache":  await _delete_all(db, TrocaOleoCache),
+        "os_manutencao":     await _delete_all(db, OrdemServico),
+        "plano_preventiva":  await _delete_all(db, PlanoPreventiva),
+        "veiculo_snapshot":  await _delete_all(db, VeiculoSnapshot),
+    }
+    await db.commit()
+    frota = await sync_veiculos(db)
+    oleo = await sync_trocas_oleo(db)
+    return {
+        "ok": True, "operacao": "reset-tudo-e-sync",
+        "apagados": apagados, "frota": frota, "oleo": oleo,
+    }

@@ -9,10 +9,18 @@ const STATUS_OPTS = [
   { v: '', l: 'Status: todos' },
   { v: 'rascunho', l: 'Rascunho' },
   { v: 'aberta', l: 'Aberta' },
-  { v: 'aguardando_anexos', l: 'Aguard. anexos' },
+  { v: 'em_triagem', l: 'Em triagem' },
+  { v: 'aguardando_orcamento', l: 'Aguard. orçamento' },
+  { v: 'aguardando_aprovacao', l: 'Aguard. aprovação' },
   { v: 'em_execucao', l: 'Em execução' },
+  { v: 'aguardando_peca', l: 'Aguard. peça' },
   { v: 'encerrada', l: 'Encerrada' },
   { v: 'cancelada', l: 'Cancelada' },
+]
+
+const CATEGORIA_OPTS = [
+  'Motor', 'Pneu', 'Pastilha / Lona', 'Relação', 'Lâmpadas',
+  'Elétrica', 'Bateria', 'Empilhadeira', 'Embreagem', 'Outros',
 ]
 
 export default function ListaOSPage() {
@@ -20,16 +28,18 @@ export default function ListaOSPage() {
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
   const [tipo, setTipo] = useState('')
+  const [categoria, setCategoria] = useState('')
   const [offset, setOffset] = useState(0)
   const limit = 20
 
   const { data, isLoading } = useQuery({
-    queryKey: ['os', { q, status, tipo, offset, filialId }],
+    queryKey: ['os', { q, status, tipo, categoria, offset, filialId }],
     queryFn: () => {
       const params = new URLSearchParams()
       if (q) params.set('q', q)
       if (status) params.set('status', status)
       if (tipo) params.set('tipo', tipo)
+      if (categoria) params.set('categoria', categoria)
       if (filialId) params.set('filial_id', String(filialId))
       params.set('limit', String(limit))
       params.set('offset', String(offset))
@@ -62,9 +72,18 @@ export default function ListaOSPage() {
                 value={tipo} onChange={(e) => { setTipo(e.target.value); setOffset(0) }}>
           <option value="">Tipo: todos</option>
           <option value="corretiva_manual">Corretiva</option>
+          <option value="corretiva_checklist">Corretiva (chk)</option>
           <option value="preventiva_automatica">Preventiva</option>
+          <option value="devolucao">Devolução</option>
+          <option value="sinistro">Sinistro</option>
+          <option value="recall">Recall</option>
         </select>
-        <button className="text-ink-500 underline ml-auto" onClick={() => { setQ(''); setStatus(''); setTipo(''); setOffset(0) }}>Limpar</button>
+        <select className="border border-border-strong rounded px-2 py-1 bg-white"
+                value={categoria} onChange={(e) => { setCategoria(e.target.value); setOffset(0) }}>
+          <option value="">Categoria: todas</option>
+          {CATEGORIA_OPTS.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+        <button className="text-ink-500 underline ml-auto" onClick={() => { setQ(''); setStatus(''); setTipo(''); setCategoria(''); setOffset(0) }}>Limpar</button>
       </div>
 
       <div className="bg-white border border-border rounded overflow-hidden">
@@ -75,15 +94,16 @@ export default function ListaOSPage() {
               <th className="text-left">Abertura</th>
               <th className="text-left">Veículo</th>
               <th className="text-left">Filial</th>
+              <th className="text-left">Categoria</th>
               <th className="text-left">Tipo</th>
               <th className="text-left">Status</th>
               <th className="text-right">Valor</th>
             </tr>
           </thead>
           <tbody>
-            {isLoading && <tr><td colSpan={7} className="text-center text-ink-500 py-6">Carregando…</td></tr>}
+            {isLoading && <tr><td colSpan={8} className="text-center text-ink-500 py-6">Carregando…</td></tr>}
             {!isLoading && (data?.data || []).length === 0 && (
-              <tr><td colSpan={7} className="text-center text-ink-500 py-6">Nenhuma OS encontrada com os filtros aplicados.</td></tr>
+              <tr><td colSpan={8} className="text-center text-ink-500 py-6">Nenhuma OS encontrada com os filtros aplicados.</td></tr>
             )}
             {(data?.data || []).map((os: any) => (
               <tr key={os.id} className="border-t border-border hover:bg-ink-50 cursor-pointer" onClick={() => location.assign(`/os/${os.id}`)}>
@@ -91,6 +111,7 @@ export default function ListaOSPage() {
                 <td className="font-mono">{fmtData(os.data_abertura)}</td>
                 <td><span className="font-mono">{os.veiculo_placa || `veic ${os.veiculo_id}`}</span> <span className="text-ink-500">· {os.veiculo_modelo || ''}</span></td>
                 <td><FilialChip filialId={os.filial_id}/></td>
+                <td>{os.categoria ? <span className="badge bg-info-bg text-info-fg">{os.categoria}</span> : <span className="text-ink-400">—</span>}</td>
                 <td><TipoBadge tipo={os.tipo_os}/></td>
                 <td><StatusBadge status={os.status}/></td>
                 <td className="text-right font-medium font-mono">{fmtBRL(os.valor_total)}</td>

@@ -1,9 +1,10 @@
-"""Planos preventivos — CRUD com gestão admin."""
+"""Planos preventivos — CRUD com gestão admin (async)."""
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, ConfigDict
-from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..dependencies import get_current_user, require_role
@@ -34,59 +35,60 @@ class PlanoUpdate(BaseModel):
 
 
 @router.get("", response_model=List[PlanoOut])
-def list_planos(
+async def list_planos(
     modelo: Optional[str] = Query(default=None),
     ativo: bool = Query(default=True),
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    q = db.query(PlanoPreventiva).filter(PlanoPreventiva.ativo.is_(ativo))
+    stmt = select(PlanoPreventiva).where(PlanoPreventiva.ativo.is_(ativo))
     if modelo:
-        q = q.filter(PlanoPreventiva.modelo_veiculo.ilike(f"%{modelo}%"))
-    return q.order_by(PlanoPreventiva.modelo_veiculo, PlanoPreventiva.item).all()
+        stmt = stmt.where(PlanoPreventiva.modelo_veiculo.ilike(f"%{modelo}%"))
+    stmt = stmt.order_by(PlanoPreventiva.modelo_veiculo, PlanoPreventiva.item)
+    return list((await db.execute(stmt)).scalars().all())
 
 
 @router.post("", response_model=PlanoOut, status_code=201)
-def create_plano(
+async def create_plano(
     payload: PlanoCreate,
     user: User = Depends(require_role(["admin", "filial_responsavel"])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     if not payload.km_intervalo and not payload.dias_intervalo:
         raise HTTPException(400, "Pelo menos 1 intervalo (km ou dias) é obrigatório")
     plano = PlanoPreventiva(**payload.model_dump())
     db.add(plano)
-    db.commit()
-    db.refresh(plano)
+    await db.commit()
+    await db.refresh(plano)
     return plano
 
 
 @router.patch("/{plano_id}", response_model=PlanoOut)
-def update_plano(
+async def update_plano(
     plano_id: int,
     payload: PlanoUpdate,
     user: User = Depends(require_role(["admin", "filial_responsavel"])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    p = db.query(PlanoPreventiva).filter(PlanoPreventiva.id == plano_id).first()
+    p = await db.get(PlanoPreventiva, plano_id)
     if not p:
         raise HTTPException(404, "Plano não encontrado")
     for field, val in payload.model_dump(exclude_unset=True).items():
         setattr(p, field, val)
-    db.commit()
-    db.refresh(p)
+    await db.commit()
+    await db.refresh(p)
     return p
 
 
 @router.delete("/{plano_id}")
-def delete_plano(
+async def delete_plano(
     plano_id: int,
     user: User = Depends(require_role(["admin", "filial_responsavel"])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    p = db.query(PlanoPreventiva).filter(PlanoPreventiva.id == plano_id).first()
+    p = await db.get(PlanoPreventiva, plano_id)
     if not p:
         raise HTTPException(404, "Plano não encontrado")
-    db.delete(p)
-    db.commit()
+    await db.delete(p)
+    await db.commit()
     return {"ok": True, "id": plano_id}

@@ -4,7 +4,8 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from jose import JWTError
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth import blacklist_jti, create_access_token, decode_token, verify_password
 from ..database import get_db
@@ -16,21 +17,25 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/login", response_model=LoginResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(
+async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
+    stmt = select(User).where(
         User.email == payload.email.lower().strip(),
         User.ativo.is_(True),
-    ).first()
+    )
+    user = (await db.execute(stmt)).scalar_one_or_none()
     if not user or not verify_password(payload.senha, user.senha_hash):
         raise HTTPException(status_code=401, detail="Email ou senha inválidos")
     token, _jti = create_access_token(user.id, user.role, user.filial_id, user.email)
     user.last_login_at = datetime.utcnow()
-    db.commit()
+    await db.commit()
     return LoginResponse(access_token=token, user=UserOut.model_validate(user))
 
 
 @router.post("/logout")
-def logout(authorization: Optional[str] = Header(default=None), user: User = Depends(get_current_user)):
+async def logout(
+    authorization: Optional[str] = Header(default=None),
+    user: User = Depends(get_current_user),
+):
     if authorization and authorization.lower().startswith("bearer "):
         token = authorization.split(" ", 1)[1]
         try:
@@ -44,5 +49,5 @@ def logout(authorization: Optional[str] = Header(default=None), user: User = Dep
 
 
 @router.get("/me", response_model=UserOut)
-def me(user: User = Depends(get_current_user)):
+async def me(user: User = Depends(get_current_user)):
     return user
