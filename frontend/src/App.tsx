@@ -17,6 +17,8 @@ import OficinasPage from './pages/OficinasPage'
 import AlertasPage from './pages/AlertasPage'
 import TimelineVeiculoPage from './pages/TimelineVeiculoPage'
 import MobilePage from './pages/MobilePage'
+import AprovacoesPage from './pages/AprovacoesPage'
+import FrotaPage from './pages/FrotaPage'
 
 // Mobile dedicado
 import MobileHomePage from './pages/mobile/MobileHomePage'
@@ -55,6 +57,8 @@ export default function App() {
 
         {/* Telas secundárias compartilhadas (desktop reaproveitado, scroll horizontal no mobile) */}
         <Route path="planos"           element={<PlanosPage />} />
+        <Route path="aprovacoes"       element={<AprovacoesPage />} />
+        <Route path="frota"            element={<FrotaPage />} />
         <Route path="oficinas"         element={<OficinasPage />} />
         <Route path="alertas"          element={<AlertasPage />} />
         <Route path="veiculo/:placa"   element={<TimelineVeiculoPage />} />

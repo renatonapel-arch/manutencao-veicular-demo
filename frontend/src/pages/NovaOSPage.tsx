@@ -115,8 +115,8 @@ export default function NovaOSPage() {
 
       <div className="space-y-3">
         {/* Veículo + filial + km */}
-        <div className="bg-white border border-border rounded p-3">
-          <div className="text-[11px] uppercase tracking-wider text-ink-500 mb-2 font-medium">1 · Veículo</div>
+        <div className="card p-5">
+          <div className="kpi-label mb-3">1 · Veículo</div>
           <div className="grid grid-cols-3 gap-3 text-[12px]">
             <div className="col-span-2">
               <label className="text-[11px] text-ink-500">Veículo <span className="text-danger">*</span></label>
@@ -167,8 +167,8 @@ export default function NovaOSPage() {
         </div>
 
         {/* Tipo */}
-        <div className="bg-white border border-border rounded p-3">
-          <div className="text-[11px] uppercase tracking-wider text-ink-500 mb-2 font-medium">2 · Tipo &amp; motivo</div>
+        <div className="card p-5">
+          <div className="kpi-label mb-3">2 · Tipo &amp; motivo</div>
           <div className="flex gap-3 mb-2">
             <label className={`flex items-center gap-1.5 text-[12px] border rounded px-3 py-1.5 cursor-pointer ${tipoOs === 'corretiva_manual' ? 'bg-danger-bg border-danger' : 'bg-white border-border-strong'}`}>
               <input type="radio" name="tipo" checked={tipoOs === 'corretiva_manual'} onChange={() => setTipoOs('corretiva_manual')}/>
@@ -246,8 +246,8 @@ export default function NovaOSPage() {
         </div>
 
         {/* Oficina */}
-        <div className="bg-white border border-border rounded p-3">
-          <div className="text-[11px] uppercase tracking-wider text-ink-500 mb-2 font-medium">3 · Oficina &amp; agenda</div>
+        <div className="card p-5">
+          <div className="kpi-label mb-3">3 · Oficina &amp; agenda</div>
           <div className="grid grid-cols-3 gap-3 text-[12px]">
             <div className="col-span-2">
               <label className="text-[11px] text-ink-500">Oficina <span className="text-danger">*</span></label>
@@ -277,7 +277,7 @@ export default function NovaOSPage() {
         </div>
 
         {/* Itens */}
-        <div className="bg-white border border-border rounded p-3">
+        <div className="card p-5">
           <div className="flex justify-between items-center mb-2">
             <div className="text-[11px] uppercase tracking-wider text-ink-500 font-medium">4 · Itens (peças e serviços)</div>
             <button onClick={addItem} className="text-xs bg-ink-100 hover:bg-ink-200 px-2 py-1 rounded">+ Adicionar item</button>

@@ -6,16 +6,16 @@ import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../comp
 
 // v3: cada transição vira POST /ordem-servico/{id}/{acao} — máquina de 9 estados
 const TRANSICOES_ACAO: { de: string; acao: string; label: string; cor: string; precisaMotivo?: boolean }[] = [
-  { de: 'rascunho',              acao: 'abrir',                label: 'Abrir OS',            cor: 'bg-warn' },
-  { de: 'aberta',                acao: 'triagem',              label: 'Iniciar triagem',     cor: 'bg-warn' },
-  { de: 'em_triagem',            acao: 'enviar-orcamento',     label: 'Enviar p/ orçamento', cor: 'bg-warn' },
-  { de: 'aguardando_orcamento',  acao: 'submeter-orcamento',   label: 'Submeter orçamento',  cor: 'bg-naval' },
-  { de: 'aguardando_aprovacao',  acao: 'aprovar',              label: '✓ Aprovar',           cor: 'bg-success' },
-  { de: 'aguardando_aprovacao',  acao: 'pedir-2o-orcamento',   label: 'Pedir 2º orçamento',  cor: 'bg-warn', precisaMotivo: true },
-  { de: 'aguardando_aprovacao',  acao: 'reprovar',             label: '✗ Reprovar',          cor: 'bg-danger', precisaMotivo: true },
-  { de: 'em_execucao',           acao: 'aguardando-peca',      label: 'Aguardando peça',     cor: 'bg-warn' },
-  { de: 'aguardando_peca',       acao: 'retomar-execucao',     label: 'Retomar execução',    cor: 'bg-warn' },
-  { de: 'em_execucao',           acao: 'encerrar',             label: '🔒 Encerrar',         cor: 'bg-success' },
+  { de: 'rascunho',              acao: 'abrir',                label: 'Abrir OS',            cor: 'btn-outline' },
+  { de: 'aberta',                acao: 'triagem',              label: 'Iniciar triagem',     cor: 'btn-outline' },
+  { de: 'em_triagem',            acao: 'enviar-orcamento',     label: 'Enviar p/ orçamento', cor: 'btn-outline' },
+  { de: 'aguardando_orcamento',  acao: 'submeter-orcamento',   label: 'Submeter orçamento',  cor: 'btn-primary' },
+  { de: 'aguardando_aprovacao',  acao: 'aprovar',              label: '✓ Aprovar',           cor: 'btn-ok' },
+  { de: 'aguardando_aprovacao',  acao: 'pedir-2o-orcamento',   label: 'Pedir 2º orçamento',  cor: 'btn-outline', precisaMotivo: true },
+  { de: 'aguardando_aprovacao',  acao: 'reprovar',             label: '✗ Reprovar',          cor: 'btn-err', precisaMotivo: true },
+  { de: 'em_execucao',           acao: 'aguardando-peca',      label: 'Aguardando peça',     cor: 'btn-outline' },
+  { de: 'aguardando_peca',       acao: 'retomar-execucao',     label: 'Retomar execução',    cor: 'btn-outline' },
+  { de: 'em_execucao',           acao: 'encerrar',             label: '🔒 Encerrar',         cor: 'btn-ok' },
 ]
 
 export default function DetalheOSPage() {
@@ -100,7 +100,7 @@ export default function DetalheOSPage() {
           <span className="text-xs text-ink-500">Aberta em {fmtDataHora(os.data_abertura)}</span>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
-          <button onClick={() => setModalAlerta(true)} className="border border-border-strong bg-white px-2.5 py-1.5 rounded text-xs hover:bg-ink-50">📲 Alerta WhatsApp</button>
+          <button onClick={() => setModalAlerta(true)} className="btn btn-outline">📲 Alerta WhatsApp</button>
           {acoesDisponiveis.map(a => {
             const disabled = a.acao === 'encerrar' && !podeEncerrar
             return (
@@ -108,7 +108,7 @@ export default function DetalheOSPage() {
                 key={a.acao}
                 disabled={disabled || transicaoMut.isPending}
                 onClick={() => executarTransicao(a.acao, a.precisaMotivo)}
-                className={`${disabled ? 'bg-ink-200 text-ink-500 cursor-not-allowed' : `${a.cor} text-white hover:opacity-90`} px-2.5 py-1.5 rounded text-xs font-medium`}
+                className={`btn ${a.cor}`}
                 title={disabled ? 'Falta NF/foto anexada' : ''}
               >
                 {a.label}
@@ -118,7 +118,7 @@ export default function DetalheOSPage() {
           {!['encerrada', 'cancelada'].includes(os.status) && (
             <button
               onClick={() => executarTransicao('cancelar', true)}
-              className="border border-danger text-danger-fg bg-white px-2.5 py-1.5 rounded text-xs font-medium hover:bg-danger-bg"
+              className="btn btn-err"
             >
               Cancelar OS
             </button>
@@ -129,8 +129,8 @@ export default function DetalheOSPage() {
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-2 space-y-3">
           {/* Veículo */}
-          <div className="bg-white border border-border rounded p-3">
-            <div className="text-[11px] uppercase tracking-wider text-ink-500 mb-2 font-medium">1 · Veículo</div>
+          <div className="card p-5">
+            <div className="kpi-label mb-3">1 · Veículo</div>
             <div className="grid grid-cols-4 gap-3 text-[12px]">
               <div className="col-span-2">
                 <label className="text-[11px] text-ink-500">Veículo</label>
@@ -162,14 +162,14 @@ export default function DetalheOSPage() {
           </div>
 
           {/* Descrição */}
-          <div className="bg-white border border-border rounded p-3">
-            <div className="text-[11px] uppercase tracking-wider text-ink-500 mb-2 font-medium">2 · Problema reportado</div>
+          <div className="card p-5">
+            <div className="kpi-label mb-3">2 · Problema reportado</div>
             <div className="text-[13px]">{os.descricao_problema || '—'}</div>
           </div>
 
           {/* Itens */}
-          <div className="bg-white border border-border rounded p-3">
-            <div className="text-[11px] uppercase tracking-wider text-ink-500 mb-2 font-medium">3 · Itens</div>
+          <div className="card p-5">
+            <div className="kpi-label mb-3">3 · Itens</div>
             <table className="w-full text-[12px] dense">
               <thead className="bg-ink-50 text-ink-500 border-y border-border">
                 <tr>
@@ -201,8 +201,8 @@ export default function DetalheOSPage() {
           </div>
 
           {/* Anexos */}
-          <div className="bg-white border border-border rounded p-3">
-            <div className="text-[11px] uppercase tracking-wider text-ink-500 mb-2 font-medium">4 · Anexos</div>
+          <div className="card p-5">
+            <div className="kpi-label mb-3">4 · Anexos</div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="text-[11px] font-medium mb-1.5">📷 Fotos <span className={temFoto ? 'text-success-fg' : 'text-ink-400'}>({(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).length})</span></div>
@@ -233,8 +233,8 @@ export default function DetalheOSPage() {
         </div>
 
         {/* Sidebar histórico */}
-        <div className="bg-white border border-border rounded p-3 self-start">
-          <div className="text-[11px] uppercase tracking-wider text-ink-500 mb-2 font-medium">Validação para encerrar</div>
+        <div className="card p-5 self-start">
+          <div className="kpi-label mb-3">Validação para encerrar</div>
           <div className="space-y-1.5 text-[12px]">
             <div className={`flex items-center gap-2 ${temFoto ? 'text-success-fg' : 'text-ink-400'}`}>
               {temFoto ? '✓' : '✗'} Foto anexada
@@ -250,7 +250,7 @@ export default function DetalheOSPage() {
             </div>
           </div>
           {podeEncerrar && os.status === 'em_execucao' && (
-            <button onClick={() => executarTransicao('encerrar')} className="mt-3 w-full bg-success text-white py-2 rounded font-medium hover:opacity-90">
+            <button onClick={() => executarTransicao('encerrar')} className="btn btn-ok w-full mt-3 justify-center">
               🔒 Encerrar OS
             </button>
           )}

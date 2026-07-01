@@ -1,117 +1,153 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { useFilial } from '../context/FilialContext'
+import { Icon } from './Icons'
 
 const FILIAIS = [
   { id: 0, label: 'Todas as filiais' },
   { id: 1, label: 'Maringá (100)' },
-  { id: 2, label: 'Ponta Grossa (700)' },
-  { id: 3, label: 'LEM (900)' },
+  { id: 2, label: 'Ponta Grossa (200)' },
+  { id: 3, label: 'Londrina (300)' },
+  { id: 4, label: 'Andaluzia (700)' },
 ]
 
-const NAV = [
-  { to: '/dashboard',   label: 'Dashboard',          icon: '📊' },
-  { to: '/os',          label: 'Ordens de Serviço',  icon: '🔧' },
-  { to: '/planos',      label: 'Planos preventivos', icon: '📅' },
-  { to: '/oficinas',    label: 'Oficinas',           icon: '🏪' },
-  { to: '/alertas',     label: 'Alertas WhatsApp',   icon: '📲' },
-  { to: '/mobile',      label: 'Preview UX (devs)',  icon: '📱' },
-]
+type NavItem = { to: string; label: string; icon: string; badge?: number }
+type NavGroup = { group: string; items: NavItem[] }
 
-const breadcrumbs: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/os': 'Ordens de Serviço',
-  '/planos': 'Planos preventivos',
-  '/oficinas': 'Catálogo de oficinas',
-  '/alertas': 'Alertas WhatsApp',
-  '/mobile': 'PWA do motorista',
+/** Sidebar do mockup aprovado — grupos Operação/Cadastros/Comunicação/Dev. */
+function useNav(): NavGroup[] {
+  const { data } = useQuery({
+    queryKey: ['aprovacoes-badge'],
+    queryFn: () =>
+      api.get('/ordem-servico?status=aguardando_aprovacao&limit=1').then(r => r.data.total ?? 0),
+    refetchInterval: 60_000,
+  })
+  const nAprov: number = data || 0
+  return [
+    {
+      group: 'Operação',
+      items: [
+        { to: '/dashboard', label: 'Visão geral', icon: 'grid' },
+        { to: '/os', label: 'Ordens de serviço', icon: 'wrench' },
+        { to: '/aprovacoes', label: 'Aprovações', icon: 'check-square', badge: nAprov },
+        { to: '/planos', label: 'Preventivas', icon: 'calendar' },
+      ],
+    },
+    {
+      group: 'Cadastros',
+      items: [
+        { to: '/oficinas', label: 'Oficinas', icon: 'store' },
+        { to: '/frota', label: 'Frota (leitura)', icon: 'car' },
+      ],
+    },
+    {
+      group: 'Comunicação',
+      items: [{ to: '/alertas', label: 'Alertas', icon: 'bell' }],
+    },
+    {
+      group: 'Dev',
+      items: [{ to: '/mobile', label: 'Preview mobile', icon: 'phone' }],
+    },
+  ]
+}
+
+const TITULOS: Record<string, [string, string]> = {
+  '/dashboard': ['Visão geral', 'Manutenção da frota'],
+  '/os': ['Operação › Ordens', 'Ordens de serviço'],
+  '/os/nova': ['Operação › Ordens › Nova', 'Abrir nova ordem'],
+  '/aprovacoes': ['Operação › Aprovações', 'Aprovações pendentes'],
+  '/planos': ['Operação › Preventivas', 'Manutenção preventiva'],
+  '/oficinas': ['Cadastros › Oficinas', 'Catálogo de oficinas'],
+  '/frota': ['Cadastros › Frota', 'Frota (somente leitura)'],
+  '/alertas': ['Comunicação › Alertas', 'Alertas'],
+  '/mobile': ['Dev › Preview', 'PWA do motorista'],
+}
+
+function tituloDa(pathname: string): [string, string] {
+  if (TITULOS[pathname]) return TITULOS[pathname]
+  if (pathname.startsWith('/os/')) return ['Operação › Ordens', 'Detalhe da ordem']
+  if (pathname.startsWith('/veiculo/')) return ['Cadastros › Frota › Ficha', 'Ficha do veículo']
+  return ['', 'Manutenção Veicular']
 }
 
 export default function Layout() {
   const { user, logout } = useAuth()
   const { filialId, setFilialId } = useFilial()
   const loc = useLocation()
-  const breadcrumb = breadcrumbs[loc.pathname]
-    || (loc.pathname.startsWith('/os/') ? 'Detalhe da OS' : '')
-    || (loc.pathname.startsWith('/veiculo/') ? 'Timeline do veículo' : '')
+  const nav = useNav()
+  const [crumb, titulo] = tituloDa(loc.pathname)
 
-  const initials = user?.nome.split(' ').slice(0, 2).map(s => s[0]).join('').toUpperCase() || 'U'
+  const inicial = (user?.nome || 'U').charAt(0).toUpperCase()
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <aside className="w-60 bg-noite text-ink-300 flex flex-col flex-shrink-0">
-        <div className="p-3 border-b border-ink-700">
-          <div className="text-[10px] tracking-widest text-ink-400 uppercase">CLAVIS</div>
-          <div className="font-semibold text-white text-base">Napel</div>
+    <div className="flex h-screen overflow-hidden bg-page-bg">
+      {/* ============ SIDEBAR (mockup: navy-950, grupos) ============ */}
+      <aside className="w-56 bg-navy-950 flex flex-col flex-shrink-0">
+        <div className="px-5 py-5 border-b border-navy-800">
+          <div className="text-[10px] tracking-[.22em] text-sky-500/70 font-semibold">CLAVIS</div>
+          <div className="display text-white text-lg font-extrabold mt-0.5">Manutenção</div>
+          <div className="text-sky-400/80 text-xs">Napel · frota</div>
         </div>
-        <nav className="flex-1 overflow-y-auto p-2 text-[13px] space-y-0.5">
-          <div className="px-2 py-1 text-[10px] tracking-widest text-ink-500 uppercase">Frota</div>
-          <a className="nav-item block px-2 py-1.5 rounded cursor-default opacity-60">📋 Controle Patrimonial</a>
-          <a className="nav-item block px-2 py-1.5 rounded cursor-default opacity-60">🛢️ Troca de Óleo</a>
-          <div className="nav-item active block px-2 py-1.5 rounded">🔧 Manutenção Veicular</div>
 
-          <div className="ml-3 mt-1 space-y-0.5 border-l border-ink-700 pl-2 text-[12px]">
-            {NAV.map(n => (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                className={({ isActive }) =>
-                  `nav-sub block px-2 py-1 rounded cursor-pointer ${isActive ? 'active' : 'hover:text-white'}`
-                }
-              >
-                {n.icon} {n.label}
-              </NavLink>
-            ))}
-          </div>
+        <nav className="flex-1 overflow-y-auto p-3">
+          {nav.map(g => (
+            <div key={g.group}>
+              <div className="side-group">{g.group}</div>
+              {g.items.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) => `side-item ${isActive ? 'active' : ''}`}
+                >
+                  <Icon name={item.icon} size={15} />
+                  {item.label}
+                  {item.badge ? <span className="side-badge">{item.badge}</span> : null}
+                </NavLink>
+              ))}
+            </div>
+          ))}
         </nav>
-        <div className="p-3 text-xs border-t border-ink-700 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-naval text-white flex items-center justify-center text-[11px] font-medium">
-            {initials}
+
+        <div className="p-3 border-t border-navy-800 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-sky-500/20 text-white flex items-center justify-center text-xs font-bold">
+            {inicial}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-white truncate">{user?.nome}</div>
-            <div className="text-ink-500 text-[10px] truncate">{user?.role} {user?.filial_id ? `· ${user.filial_id}` : ''}</div>
+            <div className="text-white text-sm font-semibold truncate">{user?.nome}</div>
+            <div className="text-sky-400/70 text-[11px] truncate">{user?.role}</div>
           </div>
-          <button
-            onClick={logout}
-            className="text-ink-400 hover:text-white text-[11px] underline"
-            title="Logout"
-          >
-            sair
+          <button onClick={logout} className="text-sky-400/70 hover:text-white" title="Sair">
+            <Icon name="logout" size={16} />
           </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-border px-5 py-2 flex justify-between items-center flex-shrink-0">
-          <div className="text-[13px]">
-            <span className="text-ink-400">Manutenção Veicular</span>
-            <span className="mx-2 text-ink-300">/</span>
-            <span className="font-medium text-ink-900">{breadcrumb}</span>
+      {/* ============ MAIN ============ */}
+      <main className="flex-1 overflow-auto">
+        <header className="sticky top-0 z-10 bg-white/85 backdrop-blur border-b border-line px-8 py-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="text-xs text-ink-500 truncate">{crumb}</div>
+            <h1 className="display text-2xl font-extrabold text-navy-900 mt-0.5 truncate">{titulo}</h1>
           </div>
-          <div className="flex gap-2 items-center text-[13px]">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <select
-              className="border border-border rounded px-2 py-1 bg-white text-xs disabled:bg-ink-100 disabled:text-ink-400"
+              className="select"
+              style={{ width: 'auto', paddingRight: '2.2rem' }}
               disabled={user?.role !== 'admin'}
               value={filialId ?? 0}
-              onChange={(e) => setFilialId(Number(e.target.value) || null)}
-              title={user?.role !== 'admin' ? 'Travado na sua filial (RBAC backend)' : 'Filtra dashboard, OS, oficinas e alertas'}
+              onChange={e => setFilialId(Number(e.target.value) || null)}
+              title={user?.role !== 'admin' ? 'Travado na sua filial (RBAC)' : 'Filtra todas as telas'}
             >
-              {FILIAIS.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
+              {FILIAIS.map(f => (
+                <option key={f.id} value={f.id}>{f.label}</option>
+              ))}
             </select>
-            <span className="text-[10px] text-ink-500 font-mono">v0.1.0-demo</span>
           </div>
         </header>
 
-        <div className="bg-gelo border-b border-border px-5 py-1.5 text-[11px] text-naval flex items-center gap-2">
-          <span className="font-semibold">📖 Glossário:</span>
-          <span><b>Ordem de Serviço</b> (UI) ≡ <span className="font-mono">os_manutencao</span> (schema)</span>
-          <span className="text-ink-500">— não confundir com OS Pipefy legado</span>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="p-8">
           <Outlet />
         </div>
       </main>
