@@ -47,9 +47,11 @@ def _serialize_for_audit(os: OrdemServico) -> dict:
 
 
 async def _recalc_valor(db: AsyncSession, os: OrdemServico):
-    """Recalcula valor_total a partir dos itens (com refresh dos relacionamentos)."""
-    await db.refresh(os, attribute_names=["itens"])
-    subtotal = sum((it.subtotal or Decimal("0")) for it in os.itens)
+    """Recalcula valor_total via SELECT SUM (refresh de relationship nao funciona em AsyncSession)."""
+    stmt = select(func.coalesce(func.sum(OsItemLinha.subtotal), 0)).where(
+        OsItemLinha.os_id == os.id
+    )
+    subtotal = Decimal(str((await db.execute(stmt)).scalar_one()))
     desconto = os.desconto_ajuste or Decimal("0")
     os.valor_total = subtotal + desconto
 
