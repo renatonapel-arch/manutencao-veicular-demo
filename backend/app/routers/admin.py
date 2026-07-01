@@ -135,7 +135,9 @@ async def trigger_import_pipefy(
     import sys as _sys
     from pathlib import Path
 
-    script = Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "import_pipefy.py"
+    script = Path(__file__).resolve().parent.parent.parent / "scripts" / "import_pipefy.py"
+    if not script.exists():  # fallback layout repo (backend/ como subpasta)
+        script = Path(__file__).resolve().parent.parent.parent.parent / "backend" / "scripts" / "import_pipefy.py"
     if not script.exists():
         return {"ok": False, "erro": "script não encontrado"}
     args = [_sys.executable, str(script)]
@@ -164,7 +166,9 @@ async def trigger_seed_membros(
     import sys as _sys
     from pathlib import Path
 
-    script = Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "seed_membros.py"
+    script = Path(__file__).resolve().parent.parent.parent / "scripts" / "seed_membros.py"
+    if not script.exists():
+        script = Path(__file__).resolve().parent.parent.parent.parent / "backend" / "scripts" / "seed_membros.py"
     if not script.exists():
         return {"ok": False, "erro": "script não encontrado"}
     args = [_sys.executable, str(script)]
