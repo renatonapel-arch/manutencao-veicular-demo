@@ -119,6 +119,63 @@ async def trigger_sync_all(
     return {"ok": True, "operacao": "sync-all", "frota": frota, "oleo": oleo}
 
 
+@router.post("/import-pipefy")
+async def trigger_import_pipefy(
+    dry_run: bool = False,
+    user: User = Depends(require_role(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """Dispara import histórico do pipe 304827831 (Custos - Manutenção Veiculos).
+
+    Idempotente via UNIQUE(pipefy_card_id). Roda em background — endpoint retorna
+    imediatamente com PID. Log completo em stdout do container.
+    """
+    import asyncio
+    import subprocess
+    import sys as _sys
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "import_pipefy.py"
+    if not script.exists():
+        return {"ok": False, "erro": "script não encontrado"}
+    args = [_sys.executable, str(script)]
+    if dry_run:
+        args.append("--dry-run")
+    # Fire-and-forget: rodar em subprocess pra não bloquear o event loop
+    proc = await asyncio.create_subprocess_exec(
+        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
+    return {
+        "ok": True, "pid": proc.pid, "dry_run": dry_run,
+        "script": str(script),
+        "detail": "rodando em background; ver logs do container",
+    }
+
+
+@router.post("/seed-membros")
+async def trigger_seed_membros(
+    dry_run: bool = False,
+    user: User = Depends(require_role(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """Popula MembroManutencao a partir dos 37 funcionários do Sólides."""
+    import asyncio
+    import subprocess
+    import sys as _sys
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "seed_membros.py"
+    if not script.exists():
+        return {"ok": False, "erro": "script não encontrado"}
+    args = [_sys.executable, str(script)]
+    if dry_run:
+        args.append("--dry-run")
+    proc = await asyncio.create_subprocess_exec(
+        *args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    )
+    return {"ok": True, "pid": proc.pid, "dry_run": dry_run}
+
+
 @router.post("/reset-tudo-e-sync")
 async def reset_e_sync(
     user: User = Depends(require_role(["admin"])),
