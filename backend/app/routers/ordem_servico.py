@@ -88,12 +88,16 @@ async def create_os(
         veiculo_id=veiculo.id, filial_id=veiculo.filial_id,
         tipo_os=payload.tipo_os,
         status="rascunho",
+        categoria=payload.categoria,
+        urgencia=payload.urgencia,
+        tipo_destino=payload.tipo_destino,
         km_veiculo=payload.km_veiculo, km_api_snapshot=veiculo.km_atual,
         oficina_id=payload.oficina_id,
         descricao_problema=payload.descricao_problema,
         data_agendada=payload.data_agendada,
         prazo_estimado_dias=payload.prazo_estimado_dias,
         aberto_por_user_id=user.id,
+        funcionario_relator_id=payload.funcionario_relator_id,
     )
     db.add(os)
     await db.flush()
@@ -293,6 +297,11 @@ async def del_item(
 
 
 # ---------- Transições (via service.py) ----------
+
+@router.post("/{os_id}/abrir", response_model=OrdemServicoOut)
+async def abrir(os_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    return await svc.transicionar(db, os_id, "aberta", user)
+
 
 @router.post("/{os_id}/triagem", response_model=OrdemServicoOut)
 async def triagem(os_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):

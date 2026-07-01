@@ -1,9 +1,11 @@
 const ST_LABELS: Record<string, string> = {
   rascunho: 'Rascunho',
   aberta: 'Aberta',
-  aguardando_anexos: 'Aguard. anexos',
-  pronta_execucao: 'Pronta',
+  em_triagem: 'Em triagem',
+  aguardando_orcamento: 'Aguard. orçamento',
+  aguardando_aprovacao: 'Aguard. aprovação',
   em_execucao: 'Em execução',
+  aguardando_peca: 'Aguard. peça',
   encerrada: 'Encerrada',
   cancelada: 'Cancelada',
 }
@@ -13,6 +15,8 @@ const TP_LABELS: Record<string, string> = {
   corretiva_checklist: 'Corretiva (chk)',
   preventiva_automatica: 'Preventiva',
   devolucao: 'Devolução',
+  sinistro: 'Sinistro',
+  recall: 'Recall',
 }
 
 const SRC_LABELS: Record<string, string> = {

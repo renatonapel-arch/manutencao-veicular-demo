@@ -37,6 +37,9 @@ export default function NovaOSPage() {
   const [veiculoId, setVeiculoId] = useState<number | ''>('')
   const [oficinaId, setOficinaId] = useState<number | ''>('')
   const [tipoOs, setTipoOs] = useState<'corretiva_manual' | 'preventiva_automatica'>('corretiva_manual')
+  const [categoria, setCategoria] = useState<string>('')
+  const [urgencia, setUrgencia] = useState<string>('')
+  const [tipoDestino, setTipoDestino] = useState<string>('oficina_terceirizada')
   const [descricao, setDescricao] = useState('')
   const [km, setKm] = useState<number>(0)
   const [dataAgendada, setDataAgendada] = useState<string>('')
@@ -70,6 +73,9 @@ export default function NovaOSPage() {
         request_id: uuid4(),
         veiculo_id: Number(veiculoId),
         tipo_os: tipoOs,
+        categoria: categoria || null,
+        urgencia: urgencia || null,
+        tipo_destino: tipoDestino,
         oficina_id: oficinaId ? Number(oficinaId) : null,
         km_veiculo: Number(km),
         descricao_problema: descricao || null,
@@ -181,6 +187,62 @@ export default function NovaOSPage() {
             placeholder="Descreva o problema reportado..."
             className="w-full border border-border-strong rounded px-2 py-1.5 text-[12px] h-20"
           />
+
+          {/* v3: Categoria (campo Tipo do Pipefy) */}
+          <div className="mt-3">
+            <label className="text-[11px] text-ink-500 block mb-1">Categoria do serviço <span className="text-ink-400">(alimenta o dashboard)</span></label>
+            <div className="flex flex-wrap gap-1.5">
+              {['Motor', 'Pneu', 'Pastilha / Lona', 'Relação', 'Lâmpadas', 'Elétrica', 'Bateria', 'Embreagem', 'Empilhadeira', 'Outros'].map(c => (
+                <button
+                  key={c} type="button"
+                  onClick={() => setCategoria(categoria === c ? '' : c)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] border ${categoria === c ? 'bg-naval text-white border-naval' : 'bg-white border-border-strong text-ink-700 hover:border-naval'}`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* v3: Urgência */}
+          <div className="mt-3">
+            <label className="text-[11px] text-ink-500 block mb-1">Urgência</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { v: 'parado', l: '🔴 Parado — precisa guincho' },
+                { v: 'roda_com_reparo', l: '🟡 Roda mas precisa reparo' },
+                { v: 'cosmetico', l: '⚪ Cosmético — pode aguardar' },
+              ].map(u => (
+                <button
+                  key={u.v} type="button"
+                  onClick={() => setUrgencia(urgencia === u.v ? '' : u.v)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] border ${urgencia === u.v ? 'bg-naval text-white border-naval' : 'bg-white border-border-strong text-ink-700 hover:border-naval'}`}
+                >
+                  {u.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* v3: Destino */}
+          <div className="mt-3">
+            <label className="text-[11px] text-ink-500 block mb-1">Quem executa</label>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { v: 'oficina_terceirizada', l: 'Oficina terceirizada' },
+                { v: 'mecanico_interno', l: 'Mecânico interno' },
+                { v: 'concessionaria', l: 'Concessionária' },
+              ].map(d => (
+                <button
+                  key={d.v} type="button"
+                  onClick={() => setTipoDestino(d.v)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] border ${tipoDestino === d.v ? 'bg-naval text-white border-naval' : 'bg-white border-border-strong text-ink-700 hover:border-naval'}`}
+                >
+                  {d.l}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Oficina */}

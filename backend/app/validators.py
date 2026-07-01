@@ -1,30 +1,20 @@
-"""Máquina de estados OS + validação NF/foto pra encerrar."""
-from typing import Dict, List, Set, Tuple
+"""Validações de anexo/item pra encerrar OS.
 
-from .models import OrdemServico, StatusOsEnum, TipoAnexoEnum
+A máquina de estados vive em service.TRANSICOES_VALIDAS (v3) — este módulo
+não duplica mais o mapa de transições.
+"""
+from typing import List, Tuple
 
-TRANSICOES_VALIDAS: Dict[StatusOsEnum, Set[StatusOsEnum]] = {
-    StatusOsEnum.rascunho:           {StatusOsEnum.aberta, StatusOsEnum.cancelada},
-    StatusOsEnum.aberta:             {StatusOsEnum.aguardando_anexos, StatusOsEnum.em_execucao, StatusOsEnum.cancelada},
-    StatusOsEnum.aguardando_anexos:  {StatusOsEnum.pronta_execucao, StatusOsEnum.em_execucao, StatusOsEnum.cancelada},
-    StatusOsEnum.pronta_execucao:    {StatusOsEnum.em_execucao, StatusOsEnum.cancelada},
-    StatusOsEnum.em_execucao:        {StatusOsEnum.encerrada, StatusOsEnum.cancelada},
-    StatusOsEnum.encerrada:          {StatusOsEnum.aberta},        # admin reabre
-    StatusOsEnum.cancelada:          set(),
-}
-
-
-def pode_transicao(de: StatusOsEnum, para: StatusOsEnum) -> bool:
-    return para in TRANSICOES_VALIDAS.get(de, set())
+from .models import OrdemServico
 
 
 def tem_nf(os: OrdemServico) -> bool:
-    return any(a.tipo == TipoAnexoEnum.nf for a in os.anexos)
+    return any(a.tipo == "nf" for a in os.anexos)
 
 
 def tem_foto(os: OrdemServico) -> bool:
     return any(
-        a.tipo in (TipoAnexoEnum.foto_hodometro, TipoAnexoEnum.foto_problema)
+        a.tipo in ("foto_hodometro", "foto_problema", "foto_pneu")
         for a in os.anexos
     )
 

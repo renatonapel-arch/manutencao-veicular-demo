@@ -4,12 +4,18 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
 
-const TRANSICOES_ACAO = [
-  { de: 'rascunho', para: 'aberta', label: 'Abrir', cor: 'bg-warn' },
-  { de: 'aberta', para: 'aguardando_anexos', label: 'Aguardando anexos', cor: 'bg-warn' },
-  { de: 'aberta', para: 'em_execucao', label: 'Em execução', cor: 'bg-warn' },
-  { de: 'aguardando_anexos', para: 'em_execucao', label: 'Em execução', cor: 'bg-warn' },
-  { de: 'em_execucao', para: 'encerrada', label: '🔒 Encerrar', cor: 'bg-success' },
+// v3: cada transição vira POST /ordem-servico/{id}/{acao} — máquina de 9 estados
+const TRANSICOES_ACAO: { de: string; acao: string; label: string; cor: string; precisaMotivo?: boolean }[] = [
+  { de: 'rascunho',              acao: 'abrir',                label: 'Abrir OS',            cor: 'bg-warn' },
+  { de: 'aberta',                acao: 'triagem',              label: 'Iniciar triagem',     cor: 'bg-warn' },
+  { de: 'em_triagem',            acao: 'enviar-orcamento',     label: 'Enviar p/ orçamento', cor: 'bg-warn' },
+  { de: 'aguardando_orcamento',  acao: 'submeter-orcamento',   label: 'Submeter orçamento',  cor: 'bg-naval' },
+  { de: 'aguardando_aprovacao',  acao: 'aprovar',              label: '✓ Aprovar',           cor: 'bg-success' },
+  { de: 'aguardando_aprovacao',  acao: 'pedir-2o-orcamento',   label: 'Pedir 2º orçamento',  cor: 'bg-warn', precisaMotivo: true },
+  { de: 'aguardando_aprovacao',  acao: 'reprovar',             label: '✗ Reprovar',          cor: 'bg-danger', precisaMotivo: true },
+  { de: 'em_execucao',           acao: 'aguardando-peca',      label: 'Aguardando peça',     cor: 'bg-warn' },
+  { de: 'aguardando_peca',       acao: 'retomar-execucao',     label: 'Retomar execução',    cor: 'bg-warn' },
+  { de: 'em_execucao',           acao: 'encerrar',             label: '🔒 Encerrar',         cor: 'bg-success' },
 ]
 
 export default function DetalheOSPage() {
@@ -29,6 +35,25 @@ export default function DetalheOSPage() {
     onSuccess: () => qc.invalidateQueries(),  // refresca OS + Dashboard + listas + timeline
     onError: (e: any) => alert(e.response?.data?.detail || 'Erro ao atualizar'),
   })
+
+  // v3: transições viram POST /ordem-servico/{id}/{acao}
+  const transicaoMut = useMutation({
+    mutationFn: ({ acao, motivo }: { acao: string; motivo?: string }) => {
+      const qs = motivo ? `?motivo=${encodeURIComponent(motivo)}` : ''
+      return api.post(`/ordem-servico/${id}/${acao}${qs}`).then(r => r.data)
+    },
+    onSuccess: () => qc.invalidateQueries(),
+    onError: (e: any) => alert(e.response?.data?.detail || 'Erro na transição'),
+  })
+
+  const executarTransicao = (acao: string, precisaMotivo?: boolean) => {
+    let motivo: string | undefined
+    if (precisaMotivo) {
+      motivo = window.prompt('Motivo (obrigatório):') || undefined
+      if (!motivo) return
+    }
+    transicaoMut.mutate({ acao, motivo })
+  }
 
   const uploadMut = useMutation({
     mutationFn: ({ tipo, file }: { tipo: string, file: File }) => {
@@ -77,12 +102,12 @@ export default function DetalheOSPage() {
         <div className="flex gap-2 flex-wrap justify-end">
           <button onClick={() => setModalAlerta(true)} className="border border-border-strong bg-white px-2.5 py-1.5 rounded text-xs hover:bg-ink-50">📲 Alerta WhatsApp</button>
           {acoesDisponiveis.map(a => {
-            const disabled = a.para === 'encerrada' && !podeEncerrar
+            const disabled = a.acao === 'encerrar' && !podeEncerrar
             return (
               <button
-                key={a.para}
-                disabled={disabled}
-                onClick={() => patchMut.mutate({ status: a.para })}
+                key={a.acao}
+                disabled={disabled || transicaoMut.isPending}
+                onClick={() => executarTransicao(a.acao, a.precisaMotivo)}
                 className={`${disabled ? 'bg-ink-200 text-ink-500 cursor-not-allowed' : `${a.cor} text-white hover:opacity-90`} px-2.5 py-1.5 rounded text-xs font-medium`}
                 title={disabled ? 'Falta NF/foto anexada' : ''}
               >
@@ -90,6 +115,14 @@ export default function DetalheOSPage() {
               </button>
             )
           })}
+          {!['encerrada', 'cancelada'].includes(os.status) && (
+            <button
+              onClick={() => executarTransicao('cancelar', true)}
+              className="border border-danger text-danger-fg bg-white px-2.5 py-1.5 rounded text-xs font-medium hover:bg-danger-bg"
+            >
+              Cancelar OS
+            </button>
+          )}
         </div>
       </div>
 
@@ -216,10 +249,15 @@ export default function DetalheOSPage() {
               {os.km_veiculo > 0 ? '✓' : '✗'} KM lido informado
             </div>
           </div>
-          {podeEncerrar && (
-            <button onClick={() => patchMut.mutate({ status: 'encerrada' })} className="mt-3 w-full bg-success text-white py-2 rounded font-medium hover:opacity-90">
+          {podeEncerrar && os.status === 'em_execucao' && (
+            <button onClick={() => executarTransicao('encerrar')} className="mt-3 w-full bg-success text-white py-2 rounded font-medium hover:opacity-90">
               🔒 Encerrar OS
             </button>
+          )}
+          {os.motivo_aprovacao && (
+            <div className={`mt-3 text-[11px] rounded px-2 py-1.5 ${os.motivo_aprovacao === 'auto' ? 'bg-info-bg text-info-fg' : 'bg-success-bg text-success-fg'}`}>
+              {os.motivo_aprovacao === 'auto' ? '⚡ Auto-aprovada (abaixo do teto)' : '✓ Aprovada manualmente'}
+            </div>
           )}
         </div>
       </div>
