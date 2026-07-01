@@ -1,22 +1,28 @@
-"""Timeline unificada do veículo — 3 fontes (OS + Troca Óleo + Checklist V2 placeholder)."""
+"""Timeline unificada do veículo — 3 fontes (OS + Troca Óleo + Checklist V2) — async."""
 from datetime import datetime, timedelta
 from decimal import Decimal
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..database import get_db
 from ..dependencies import check_filial_access, get_current_user
-from ..models import OrdemServico, StatusOsEnum, TrocaOleoCache, User, VeiculoSnapshot
+from ..models import OrdemServico, TrocaOleoCache, User, VeiculoSnapshot
 from ..schemas import TimelineItem, VeiculoOut, VeiculoTimeline
 
 router = APIRouter(prefix="/veiculos", tags=["timeline"])
 
 
 @router.get("/{veiculo_id}/timeline", response_model=VeiculoTimeline)
-def get_timeline(veiculo_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    v = db.query(VeiculoSnapshot).filter(VeiculoSnapshot.id == veiculo_id).first()
+async def get_timeline(
+    veiculo_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    v = await db.get(VeiculoSnapshot, veiculo_id)
     if not v:
         raise HTTPException(404, "Veículo não encontrado")
     if not check_filial_access(user, v.filial_id):
@@ -27,10 +33,17 @@ def get_timeline(veiculo_id: int, user: User = Depends(get_current_user), db: Se
 
     # ---- Fonte 1: OS-Manutenção ----
     try:
-        oss = db.query(OrdemServico).filter(
-            OrdemServico.veiculo_id == veiculo_id,
-            OrdemServico.deleted_at.is_(None),
-        ).order_by(OrdemServico.data_abertura.desc()).limit(50).all()
+        stmt = (
+            select(OrdemServico)
+            .options(selectinload(OrdemServico.oficina))
+            .where(
+                OrdemServico.veiculo_id == veiculo_id,
+                OrdemServico.deleted_at.is_(None),
+            )
+            .order_by(OrdemServico.data_abertura.desc())
+            .limit(50)
+        )
+        oss = list((await db.execute(stmt)).scalars().all())
         for o in oss:
             items.append(TimelineItem(
                 tipo="os_manutencao",
@@ -38,8 +51,8 @@ def get_timeline(veiculo_id: int, user: User = Depends(get_current_user), db: Se
                 titulo=f"OS #{o.id} · {o.descricao_problema or 'manutenção'}",
                 descricao=f"{o.oficina.nome if o.oficina else '—'} · km {o.km_veiculo:,}".replace(",", "."),
                 valor=o.valor_total,
-                subtipo=o.tipo_os.value,
-                status=o.status.value,
+                subtipo=o.tipo_os,
+                status=o.status,
                 oficina=o.oficina.nome if o.oficina else None,
                 economia=o.economia_napel_total if o.economia_napel_total else None,
                 ref_id=o.id,
@@ -49,15 +62,22 @@ def get_timeline(veiculo_id: int, user: User = Depends(get_current_user), db: Se
 
     # ---- Fonte 2: Troca de óleo (cache do app dedicado) ----
     try:
-        trocas = db.query(TrocaOleoCache).filter(
-            TrocaOleoCache.veiculo_id == veiculo_id
-        ).order_by(TrocaOleoCache.data_troca.desc()).limit(30).all()
+        stmt = (
+            select(TrocaOleoCache)
+            .where(TrocaOleoCache.veiculo_id == veiculo_id)
+            .order_by(TrocaOleoCache.data_troca.desc())
+            .limit(30)
+        )
+        trocas = list((await db.execute(stmt)).scalars().all())
         for t in trocas:
             items.append(TimelineItem(
                 tipo="troca_oleo",
                 data=t.data_troca,
                 titulo=f"Troca de óleo — {t.produto or 'Lubrax'}",
-                descricao=f"{t.oficina_nome or '—'} · km {t.km:,}".replace(",", ".") if t.km else (t.oficina_nome or ""),
+                descricao=(
+                    f"{t.oficina_nome or '—'} · km {t.km:,}".replace(",", ".")
+                    if t.km else (t.oficina_nome or "")
+                ),
                 valor=t.valor,
                 status="encerrada",
                 oficina=t.oficina_nome,
@@ -75,13 +95,12 @@ def get_timeline(veiculo_id: int, user: User = Depends(get_current_user), db: Se
             tipo="patrimonial",
             data=datetime.combine(v.vencimento_crlv, datetime.min.time()) - timedelta(days=365),
             titulo=f"CRLV vigente — vence em {v.vencimento_crlv.isoformat()}",
-            descricao=f"via Cadastro Veicular (CRLV-Vision)",
+            descricao="via Cadastro Veicular",
             status="ok",
             ref_id=v.id,
         ))
 
-    # Normaliza tzinfo: trocas de óleo vêm tz-aware (timestamptz) e itens CRLV/OS
-    # podem ser tz-naive — comparar os dois crasha. Achata pra naive só na ordenação.
+    # Achata tz pra ordenação
     items.sort(key=lambda x: x.data.replace(tzinfo=None), reverse=True)
 
     # KPIs
@@ -96,5 +115,6 @@ def get_timeline(veiculo_id: int, user: User = Depends(get_current_user), db: Se
     return VeiculoTimeline(
         veiculo=VeiculoOut.model_validate(v),
         items=items, warnings=warnings,
-        total_os=total_os, custo_12m=custo_12m, cpk=Decimal(str(round(float(cpk), 2))),
+        total_os=total_os, custo_12m=custo_12m,
+        cpk=Decimal(str(round(float(cpk), 2))),
     )

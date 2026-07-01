@@ -1,9 +1,9 @@
-"""Catálogo de oficinas — texto livre bloqueado, gestão via RBAC admin_oficinas."""
+"""Catálogo de oficinas — texto livre bloqueado, gestão via RBAC admin_oficinas (async)."""
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy import func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..dependencies import get_current_user, require_role
@@ -14,34 +14,39 @@ router = APIRouter(prefix="/oficinas", tags=["oficinas"])
 
 
 @router.get("", response_model=List[OficinaOut])
-def list_oficinas(
+async def list_oficinas(
     q: Optional[str] = Query(default=None),
     ativa: bool = Query(default=True),
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    query = db.query(OficinaPadronizada).filter(OficinaPadronizada.ativa.is_(ativa))
+    stmt = select(OficinaPadronizada).where(OficinaPadronizada.ativa.is_(ativa))
     if q:
         like = f"%{q}%"
-        query = query.filter(or_(
+        stmt = stmt.where(or_(
             OficinaPadronizada.nome.ilike(like),
             OficinaPadronizada.cnpj.ilike(like),
             OficinaPadronizada.cidade.ilike(like),
         ))
-    return query.order_by(OficinaPadronizada.nome).all()
+    stmt = stmt.order_by(OficinaPadronizada.nome)
+    return list((await db.execute(stmt)).scalars().all())
 
 
 @router.get("/{oid}/stats")
-def oficina_stats(oid: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    of = db.query(OficinaPadronizada).filter(OficinaPadronizada.id == oid).first()
+async def oficina_stats(
+    oid: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    of = await db.get(OficinaPadronizada, oid)
     if not of:
         raise HTTPException(status_code=404)
-    qry = db.query(
+    stmt = select(
         func.count(OrdemServico.id).label("total_os"),
         func.coalesce(func.sum(OrdemServico.valor_total), 0).label("custo_total"),
         func.coalesce(func.avg(OrdemServico.valor_total), 0).label("ticket_medio"),
-    ).filter(OrdemServico.oficina_id == oid)
-    row = qry.first()
+    ).where(OrdemServico.oficina_id == oid)
+    row = (await db.execute(stmt)).one()
     return {
         "id": of.id, "nome": of.nome,
         "total_os": int(row.total_os or 0),
@@ -51,17 +56,18 @@ def oficina_stats(oid: int, user: User = Depends(get_current_user), db: Session 
 
 
 @router.post("", response_model=OficinaOut, status_code=201)
-def create_oficina(
+async def create_oficina(
     payload: OficinaCreate,
     user: User = Depends(require_role(["admin_oficinas", "admin", "filial_responsavel"])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     nome_normalizado = payload.nome.strip()
     if not nome_normalizado:
         raise HTTPException(status_code=400, detail="Nome obrigatório")
-    existing = db.query(OficinaPadronizada).filter(
+    stmt = select(OficinaPadronizada).where(
         func.lower(func.trim(OficinaPadronizada.nome)) == nome_normalizado.lower()
-    ).first()
+    )
+    existing = (await db.execute(stmt)).scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=409, detail=f"Oficina já existe (ID {existing.id})")
 
@@ -74,20 +80,20 @@ def create_oficina(
 
     of = OficinaPadronizada(nome=nome_normalizado, **data)
     db.add(of)
-    db.commit()
-    db.refresh(of)
+    await db.commit()
+    await db.refresh(of)
     return of
 
 
 @router.delete("/{oid}")
-def deactivate_oficina(
+async def deactivate_oficina(
     oid: int,
     user: User = Depends(require_role(["admin_oficinas", "admin", "filial_responsavel"])),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    of = db.query(OficinaPadronizada).filter(OficinaPadronizada.id == oid).first()
+    of = await db.get(OficinaPadronizada, oid)
     if not of:
         raise HTTPException(status_code=404)
     of.ativa = False
-    db.commit()
+    await db.commit()
     return {"ok": True, "detail": "Oficina desativada"}

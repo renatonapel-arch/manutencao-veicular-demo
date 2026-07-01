@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from .bootstrap import init_database, seed_all
+from .bootstrap import init_database_async, seed_all_async
 from .config import settings
 
 logging.basicConfig(
@@ -23,15 +23,15 @@ log = logging.getLogger("manutencao")
 async def lifespan(app: FastAPI):
     log.info("Boot: criando tabelas + seed...")
     try:
-        init_database()
-        seed_all()
+        await init_database_async()
+        await seed_all_async()
     except Exception as e:
         log.exception("Boot inicial falhou: %s", e)
     try:
         from .jobs.alertas_preventivas import start_scheduler
         start_scheduler()
     except Exception as e:
-        log.warning("Scheduler não iniciou (mock no MVP): %s", e)
+        log.warning("Scheduler não iniciou: %s", e)
     yield
     log.info("Shutdown")
 

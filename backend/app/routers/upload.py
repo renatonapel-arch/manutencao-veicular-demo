@@ -1,17 +1,16 @@
-"""Upload de anexos da OS (foto + NF)."""
+"""Upload de anexos da OS (async)."""
 import hashlib
-import os
 import uuid
 from pathlib import Path
-from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..database import get_db
 from ..dependencies import check_filial_access, get_current_user
-from ..models import AnexosOs, OrdemServico, TipoAnexoEnum, User
+from ..models import AnexosOs, OrdemServico, User
 from ..schemas import AnexoOut
 
 router = APIRouter(prefix="/upload", tags=["upload"])
@@ -19,6 +18,10 @@ router = APIRouter(prefix="/upload", tags=["upload"])
 ALLOWED_MIMES = {
     "image/jpeg", "image/png", "image/webp", "image/heic",
     "application/pdf",
+}
+TIPOS_VALIDOS = {
+    "foto_hodometro", "foto_problema", "foto_pneu",
+    "nf", "orcamento", "comprovante_pagamento",
 }
 
 
@@ -42,31 +45,35 @@ def _save_file(file: UploadFile, os_id: int) -> tuple[str, str, int]:
 
 
 @router.post("/os/{os_id}/anexos", response_model=AnexoOut, status_code=201)
-def upload_anexo(
+async def upload_anexo(
     os_id: int,
     tipo: str = Form(...),
+    posicao_pneu: str = Form(default=None),
     arquivo: UploadFile = File(...),
     user: User = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    os = db.query(OrdemServico).filter(OrdemServico.id == os_id).first()
-    if not os:
+    os = await db.get(OrdemServico, os_id)
+    if not os or os.deleted_at is not None:
         raise HTTPException(status_code=404, detail="OS não encontrada")
     if not check_filial_access(user, os.filial_id):
         raise HTTPException(status_code=403)
 
-    try:
-        tipo_enum = TipoAnexoEnum(tipo)
-    except ValueError:
+    if tipo not in TIPOS_VALIDOS:
         raise HTTPException(status_code=400, detail=f"Tipo inválido: {tipo}")
 
     if arquivo.content_type not in ALLOWED_MIMES:
-        raise HTTPException(status_code=400, detail=f"MIME não permitido: {arquivo.content_type}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"MIME não permitido: {arquivo.content_type}",
+        )
 
-    limite_mb = settings.MAX_UPLOAD_MB_FOTO if tipo_enum != TipoAnexoEnum.nf else settings.MAX_UPLOAD_MB_DOC
+    limite_mb = (
+        settings.MAX_UPLOAD_MB_FOTO
+        if tipo != "nf" else settings.MAX_UPLOAD_MB_DOC
+    )
     rel_path, file_hash, size = _save_file(arquivo, os_id)
     if size > limite_mb * 1024 * 1024:
-        # rollback do arquivo
         try:
             (Path(settings.UPLOAD_DIR) / rel_path).unlink()
         except Exception:
@@ -74,7 +81,8 @@ def upload_anexo(
         raise HTTPException(status_code=413, detail=f"Arquivo excede {limite_mb}MB")
 
     anexo = AnexosOs(
-        os_id=os_id, tipo=tipo_enum,
+        os_id=os_id, tipo=tipo,
+        posicao_pneu=posicao_pneu if tipo == "foto_pneu" else None,
         arquivo_url=f"/uploads/{rel_path}",
         file_hash=file_hash, size_bytes=size,
         mime_type=arquivo.content_type,
@@ -82,19 +90,26 @@ def upload_anexo(
         uploaded_by=user.id,
     )
     db.add(anexo)
-    db.commit()
-    db.refresh(anexo)
+    await db.commit()
+    await db.refresh(anexo)
     return anexo
 
 
 @router.delete("/os/{os_id}/anexos/{anexo_id}")
-def delete_anexo(os_id: int, anexo_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    a = db.query(AnexosOs).filter(AnexosOs.id == anexo_id, AnexosOs.os_id == os_id).first()
+async def delete_anexo(
+    os_id: int, anexo_id: int,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    stmt = select(AnexosOs).where(
+        AnexosOs.id == anexo_id, AnexosOs.os_id == os_id,
+    )
+    a = (await db.execute(stmt)).scalar_one_or_none()
     if not a:
         raise HTTPException(404)
-    os = db.query(OrdemServico).filter(OrdemServico.id == os_id).first()
-    if not check_filial_access(user, os.filial_id):
+    os = await db.get(OrdemServico, os_id)
+    if not os or not check_filial_access(user, os.filial_id):
         raise HTTPException(403)
-    db.delete(a)
-    db.commit()
+    await db.delete(a)
+    await db.commit()
     return {"ok": True}
