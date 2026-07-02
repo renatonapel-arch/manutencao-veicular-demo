@@ -32,6 +32,12 @@ _ALIASES = {
     "GUAREZI": "GUAREZI",
     # Dida e variações
     "DIDDA": "DIDA",
+    "DIDA MOTOD": "DIDA",  # typo real do Pipefy
+    # Boldor com typo Buldor
+    "BULDOR": "BOLDOR",
+    # Guarezi variantes
+    "GUAREZ": "GUAREZI",
+    "GUAREZY": "GUAREZI",
 }
 
 
