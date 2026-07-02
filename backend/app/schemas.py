@@ -177,6 +177,7 @@ class OrdemServicoOut(BaseModel):
     reaberta_de_os_id: Optional[int] = None
     aberto_por_user_id: int
     funcionario_relator_id: Optional[int] = None
+    motivo_reprovacao: Optional[str] = None
     updated_at: datetime
     # Campos derivados (preenchidos no router pra evitar lookups extras no front)
     veiculo_placa: Optional[str] = None

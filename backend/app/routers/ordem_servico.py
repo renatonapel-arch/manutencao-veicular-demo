@@ -149,10 +149,31 @@ async def list_os(
     db: AsyncSession = Depends(get_db),
 ):
     base = select(OrdemServico).where(OrdemServico.deleted_at.is_(None))
-    if user.role != "admin":
+
+    # Roles globais (admin/aprovador) veem tudo (com filtro opcional de filial).
+    # Demais são restritos pela filial do próprio user.
+    if user.role in ("admin", "aprovador"):
+        if filial_id:
+            base = base.where(OrdemServico.filial_id == filial_id)
+    else:
         base = base.where(OrdemServico.filial_id == user.filial_id)
-    elif filial_id:
-        base = base.where(OrdemServico.filial_id == filial_id)
+
+        # Restrições adicionais por papel do módulo:
+        #  - motorista só vê OS que ele mesmo relatou
+        #  - mecanico_interno só vê OS destinadas a mecânico interno
+        # Consulta papel via MembroManutencao (subselect pra evitar await
+        # separado — mantém query síncrona SQL puro).
+        from ..models import MembroManutencao
+        membro_stmt = select(MembroManutencao).where(
+            MembroManutencao.user_id == user.id,
+            MembroManutencao.ativo.is_(True),
+        )
+        membro = (await db.execute(membro_stmt)).scalars().first()
+        if membro:
+            if membro.papel == "motorista" and membro.funcionario_id:
+                base = base.where(OrdemServico.funcionario_relator_id == membro.funcionario_id)
+            elif membro.papel == "mecanico_interno":
+                base = base.where(OrdemServico.tipo_destino == "mecanico_interno")
     if status:
         base = base.where(OrdemServico.status == status)
     if tipo:

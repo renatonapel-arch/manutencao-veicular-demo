@@ -78,12 +78,16 @@ async def autorizar_transicao(
 
     Admin do Clavis passa sempre. Demais papéis validados via MembroManutencao.
     """
-    if user.role == "admin":
+    if user.role in ("admin", "aprovador"):
         return
 
     membro = await get_membro(db, user, filial_id=os.filial_id)
     if not membro:
         raise HTTPException(403, "Sem vínculo com a filial da OS")
+
+    # Papel 'admin' do módulo (não role global) autoriza qualquer transição
+    if membro.papel == "admin":
+        return
 
     # filial_responsavel controla toda transição na sua filial
     if membro.papel == "filial_responsavel":

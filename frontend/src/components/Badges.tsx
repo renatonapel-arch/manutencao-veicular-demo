@@ -34,8 +34,13 @@ export const TipoBadge = ({ tipo }: { tipo: string }) => (
   <span className={`badge tp-${tipo}`}>{TP_LABELS[tipo] || tipo}</span>
 )
 
+const FILIAL_CODIGO: Record<number, string> = {
+  1: '100', 2: '700', 3: '900',
+  5: 'DIR',  // Diretoria/executiva — carros de gestor não vinculados às lojas
+}
+
 export const FilialChip = ({ filialId }: { filialId: number }) => {
-  const codigo = filialId === 1 ? '100' : filialId === 2 ? '700' : filialId === 3 ? '900' : String(filialId)
+  const codigo = FILIAL_CODIGO[filialId] ?? String(filialId)
   return <span className={`badge fil-${filialId}`}>{codigo}</span>
 }
 

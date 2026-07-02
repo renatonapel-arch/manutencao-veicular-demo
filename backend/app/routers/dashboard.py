@@ -23,9 +23,17 @@ router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
 def _escopo(user: User, filial_id: Optional[int]) -> list:
-    """Condições de escopo: sempre deleted_at IS NULL + filial conforme RBAC."""
-    conds = [OrdemServico.deleted_at.is_(None)]
-    if user.role != "admin":
+    """Condições de escopo: deleted_at IS NULL + filial (RBAC) + exclui rascunho.
+
+    Rascunho é OS incompleta que o usuário ainda está montando — não deve
+    poluir custo total nem CPK. Uma OS "fdsfdsgfsdf" com valor R$ 34.223.450
+    entrou nos agregados e destruiu o dashboard até corrigir isso.
+    """
+    conds = [
+        OrdemServico.deleted_at.is_(None),
+        OrdemServico.status != "rascunho",
+    ]
+    if user.role not in ("admin", "aprovador"):
         conds.append(OrdemServico.filial_id == user.filial_id)
     elif filial_id:
         conds.append(OrdemServico.filial_id == filial_id)

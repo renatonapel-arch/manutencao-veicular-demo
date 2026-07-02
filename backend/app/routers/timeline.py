@@ -39,6 +39,7 @@ async def get_timeline(
             .where(
                 OrdemServico.veiculo_id == veiculo_id,
                 OrdemServico.deleted_at.is_(None),
+                OrdemServico.status != "rascunho",
             )
             .order_by(OrdemServico.data_abertura.desc())
             .limit(50)

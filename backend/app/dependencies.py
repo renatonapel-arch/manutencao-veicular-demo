@@ -47,8 +47,14 @@ def require_role(roles: List[str]) -> Callable:
 
 
 def check_filial_access(user: User, filial_id: Optional[int]) -> bool:
-    """Admin vê tudo; demais só veem a própria filial."""
-    if user.role == "admin":
+    """Roles globais (admin/aprovador) veem tudo; demais só a própria filial.
+
+    - admin: total no Clavis (todos módulos).
+    - aprovador: role dedicada a quem aprova compras/OS entre filiais — não é
+      restringido por filial de origem. Sem isso, Cesar tomava 403 e o papel
+      ficava inutilizado.
+    """
+    if user.role in ("admin", "aprovador"):
         return True
     if filial_id is None:
         return False
@@ -74,7 +80,8 @@ async def get_membro(
         MembroManutencao.ativo.is_(True),
     )
     if filial_id is not None:
-        stmt = stmt.where(MembroManutencao.filial_id == filial_id)
+        # filial 0 = "todas" — membro global (Hudson/Cesar) atende qualquer filial
+        stmt = stmt.where(MembroManutencao.filial_id.in_([filial_id, 0]))
     result = await db.execute(stmt)
     return result.scalars().first()
 

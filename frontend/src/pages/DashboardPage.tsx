@@ -27,7 +27,7 @@ export default function DashboardPage() {
   }
 
   const variacao = Number(dash.cpk_variacao_pct || 0)
-  const serie: { mes: string; valor: number }[] = (dash.serie_temporal_12m || []).slice(-6)
+  const serie: { mes: string; valor: number }[] = (dash.serie_temporal_12m || []).slice(-12)
   const maxSerie = Math.max(...serie.map(s => s.valor), 1)
   const totalSerie = serie.reduce((s, x) => s + x.valor, 0)
 
@@ -106,7 +106,7 @@ export default function DashboardPage() {
           <div className="flex items-baseline justify-between mb-6">
             <div>
               <h3 className="display text-base font-bold text-navy-900">Custo mensal</h3>
-              <div className="text-xs text-ink-500 mt-0.5">últimos 6 meses</div>
+              <div className="text-xs text-ink-500 mt-0.5">últimos 12 meses</div>
             </div>
             <div className="text-xs text-ink-500 font-mono num">total: {fmtBRL(totalSerie)}</div>
           </div>
