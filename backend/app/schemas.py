@@ -185,11 +185,23 @@ class OrdemServicoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AuditoriaOsOut(BaseModel):
+    id: int
+    operacao: str
+    user_id: Optional[int] = None
+    motivo: Optional[str] = None
+    before_data: Optional[dict] = None
+    after_data: Optional[dict] = None
+    timestamp: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
 class OrdemServicoDetalhe(OrdemServicoOut):
     veiculo: VeiculoOut
     oficina: Optional[OficinaOut] = None
     itens: List[ItemLinhaOut] = []
     anexos: List[AnexoOut] = []
+    auditoria: List[AuditoriaOsOut] = []
 
 
 class ListaOSResponse(BaseModel):
@@ -224,16 +236,18 @@ class VeiculoTimeline(BaseModel):
 
 # ---------- Dashboard ----------
 class DashboardFilial(BaseModel):
-    cpk_acumulado_ytd: Decimal
-    cpk_variacao_pct: Decimal
-    custo_total_mes: Decimal
+    # Números do dashboard: serializados como float (não Decimal-string) pro frontend
+    # não ter que parsear. Precisão de 2 casas é suficiente para KPIs visuais.
+    cpk_acumulado_ytd: float
+    cpk_variacao_pct: float
+    custo_total_mes: float
     os_no_mes: int
-    ticket_medio: Decimal
-    maior_os_mes: Decimal
+    ticket_medio: float
+    maior_os_mes: float
     os_abertas: int
     os_atrasadas: int
-    pct_preventiva_no_prazo: Decimal
-    pct_com_nf: Decimal
+    pct_preventiva_no_prazo: float
+    pct_com_nf: float
     serie_temporal_12m: List[dict]
     distribuicao_tipo: List[dict]
     top_veiculos: List[dict]

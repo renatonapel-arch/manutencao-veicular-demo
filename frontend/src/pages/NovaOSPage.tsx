@@ -209,15 +209,18 @@ export default function NovaOSPage() {
             <label className="text-[11px] text-ink-500 block mb-1">Urgência</label>
             <div className="flex flex-wrap gap-1.5">
               {[
-                { v: 'parado', l: '🔴 Parado — precisa guincho' },
-                { v: 'roda_com_reparo', l: '🟡 Roda mas precisa reparo' },
-                { v: 'cosmetico', l: '⚪ Cosmético — pode aguardar' },
+                { v: 'parado',          l: 'Parado — precisa guincho',   tone: 'err'  },
+                { v: 'roda_com_reparo', l: 'Roda mas precisa reparo',    tone: 'warn' },
+                { v: 'cosmetico',       l: 'Cosmético — pode aguardar',  tone: 'ok'   },
               ].map(u => (
                 <button
                   key={u.v} type="button"
                   onClick={() => setUrgencia(urgencia === u.v ? '' : u.v)}
-                  className={`px-2.5 py-1 rounded-full text-[11px] border ${urgencia === u.v ? 'bg-naval text-white border-naval' : 'bg-white border-border-strong text-ink-700 hover:border-naval'}`}
+                  className={`chip ${urgencia === u.v ? 'chip-on' : ''}`}
                 >
+                  <span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${
+                    u.tone === 'err' ? 'bg-err' : u.tone === 'warn' ? 'bg-warn' : 'bg-ok'
+                  }`} />
                   {u.l}
                 </button>
               ))}

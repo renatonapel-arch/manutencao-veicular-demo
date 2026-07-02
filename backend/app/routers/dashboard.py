@@ -82,16 +82,38 @@ async def dashboard(
         OrdemServico.data_encerramento >= inicio_ano,
     ])
 
-    # CPK YTD (custo / km total dos veículos ativos do escopo)
-    veic_stmt = select(func.coalesce(func.sum(VeiculoSnapshot.km_atual), 0)).where(
-        VeiculoSnapshot.ativo.is_(True)
+    # CPK YTD = custo_ytd / km_percorrido_no_ano
+    # km percorrido é aproximado por (max - min) de km_veiculo nas OS do ano por veículo.
+    # Se um veículo não teve OS no ano, ele não entra no denominador (nem no numerador).
+    # Fallback: se não der pra calcular (ex: 1 OS só por veículo), usa 3% do km_atual como
+    # heurística de km_ano_típico (~15-30k km/ano em frota comercial).
+    km_stmt = (
+        select(
+            OrdemServico.veiculo_id,
+            func.max(OrdemServico.km_veiculo).label("km_max"),
+            func.min(OrdemServico.km_veiculo).label("km_min"),
+        )
+        .where(*escopo, OrdemServico.data_abertura >= inicio_ano,
+               OrdemServico.km_veiculo > 0)
+        .group_by(OrdemServico.veiculo_id)
     )
-    if user.role != "admin":
-        veic_stmt = veic_stmt.where(VeiculoSnapshot.filial_id == user.filial_id)
-    elif filial_id:
-        veic_stmt = veic_stmt.where(VeiculoSnapshot.filial_id == filial_id)
-    km_total = int((await db.execute(veic_stmt)).scalar_one() or 0) or 1
-    cpk = (custo_ytd / km_total).quantize(Decimal("0.01"))
+    km_rows = (await db.execute(km_stmt)).all()
+    km_percorrido_calc = sum(int(r.km_max - r.km_min) for r in km_rows if r.km_max and r.km_min)
+
+    # Fallback: soma 3% do km_atual dos veículos com OS mas sem spread
+    if km_percorrido_calc < 1000:
+        veic_stmt = select(func.coalesce(func.sum(VeiculoSnapshot.km_atual), 0)).where(
+            VeiculoSnapshot.ativo.is_(True)
+        )
+        if user.role != "admin":
+            veic_stmt = veic_stmt.where(VeiculoSnapshot.filial_id == user.filial_id)
+        elif filial_id:
+            veic_stmt = veic_stmt.where(VeiculoSnapshot.filial_id == filial_id)
+        km_frota_total = int((await db.execute(veic_stmt)).scalar_one() or 0)
+        km_percorrido_calc = int(km_frota_total * 0.03)  # ~3% do km total = km/ano típico
+
+    km_percorrido = km_percorrido_calc or 1
+    cpk = (custo_ytd / km_percorrido).quantize(Decimal("0.01"))
 
     # % com NF
     total_encerradas = await _conta(db, escopo + [OrdemServico.status == "encerrada"])

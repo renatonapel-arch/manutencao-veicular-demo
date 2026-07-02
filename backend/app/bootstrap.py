@@ -108,29 +108,45 @@ async def _migrate_v3_schema() -> None:
 
 
 async def seed_all_async() -> None:
-    """Garante 1 admin logável + 1 membro admin do módulo."""
+    """Garante users + membros mínimos para cada papel do RBAC.
+
+    Ideia: você loga como qualquer papel pra testar o fluxo E2E (aprovador,
+    responsável, mecânico interno, motorista), sem depender do provisionamento
+    real do Clavis ainda.
+    """
     async with SessionLocal() as db:
-        # Já tem user? Pula seed mínimo.
-        stmt = select(User).limit(1)
-        if (await db.execute(stmt)).scalar_one_or_none():
-            log.info("Seed já aplicado, pulando.")
-            return
-
-        log.info("Aplicando seed mínimo (admin logável)...")
         senha = hash_password("password123")
-        admin = User(
-            id=1, email="hudson@napel.local", role="admin", filial_id=None,
-            nome="Hudson · Admin", senha_hash=senha, telefone="+5544999413366",
-            created_at=datetime.utcnow(),
-        )
-        db.add(admin)
-        await db.flush()
+        seeds = [
+            # (email, nome, role, filial_id, papel_manutencao, telefone)
+            ("hudson@napel.local",     "Hudson · Admin",           "admin",     None, "admin",              "+5544999413366"),
+            ("cesar@napel.local",      "Cesar · Aprovador",        "aprovador", None, "admin",              "+5544999413366"),
+            ("responsavel@napel.local","Responsável · Maringá",    "usuario",   2,    "filial_responsavel", "+5544999413366"),
+            ("mecanico@napel.local",   "Mecânico · Bancada",       "usuario",   2,    "mecanico_interno",   "+5544999413366"),
+            ("motorista@napel.local",  "Motorista · Frota",        "usuario",   2,    "motorista",          "+5544999413366"),
+        ]
 
-        # Membro admin — filial 0 = "todas"
-        membro = MembroManutencao(
-            user_id=admin.id, filial_id=0, papel="admin",
-            funcionario_id=None, ativo=True,
-        )
-        db.add(membro)
+        # cria ou completa
+        for email, nome, role, filial_id, papel, tel in seeds:
+            r = await db.execute(select(User).where(User.email == email))
+            u = r.scalar_one_or_none()
+            if not u:
+                u = User(
+                    email=email, nome=nome, role=role, filial_id=filial_id,
+                    senha_hash=senha, telefone=tel, created_at=datetime.utcnow(),
+                )
+                db.add(u)
+                await db.flush()
+                log.info("Seed user criado: %s (papel=%s)", email, papel)
+            # membro do módulo (filial 0 = todas quando aprovador/admin)
+            filial_membro = filial_id if filial_id else 0
+            rm = await db.execute(select(MembroManutencao).where(
+                MembroManutencao.user_id == u.id
+            ))
+            m = rm.scalar_one_or_none()
+            if not m:
+                db.add(MembroManutencao(
+                    user_id=u.id, filial_id=filial_membro, papel=papel,
+                    funcionario_id=None, ativo=True,
+                ))
         await db.commit()
-        log.info("Seed mínimo aplicado: %s + membro admin", admin.email)
+        log.info("Seed RBAC completo: 5 users em 5 papéis distintos.")

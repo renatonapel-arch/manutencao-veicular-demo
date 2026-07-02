@@ -208,7 +208,19 @@ async def get_os(
         raise HTTPException(status_code=404, detail="OS não encontrada")
     if not check_filial_access(user, os.filial_id):
         raise HTTPException(status_code=403, detail="Cross-filial denied")
-    return os
+
+    auditoria = (await db.execute(
+        select(AuditoriaOs).where(AuditoriaOs.os_id == os_id)
+        .order_by(AuditoriaOs.timestamp.desc())
+    )).scalars().all()
+
+    payload = OrdemServicoDetalhe.model_validate({
+        **{c.name: getattr(os, c.name) for c in os.__table__.columns},
+        "veiculo": os.veiculo, "oficina": os.oficina,
+        "itens": os.itens, "anexos": os.anexos,
+        "auditoria": list(auditoria),
+    })
+    return payload
 
 
 @router.patch("/{os_id}", response_model=OrdemServicoOut)
