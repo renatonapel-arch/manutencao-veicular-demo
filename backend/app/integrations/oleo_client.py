@@ -57,7 +57,7 @@ async def listar_oficinas() -> list[dict]:
     if _OFIC_CACHE["data"] and (now - _OFIC_CACHE["ts"]) < _TTL_OFIC:
         return _OFIC_CACHE["data"]
 
-    data = await _get_oleo("/oficinas/list")
+    data = await _get_oleo("/api/v1/oficinas/list")
     oficinas = (data or {}).get("oficinas", [])
     if oficinas:
         _OFIC_CACHE["data"] = oficinas
@@ -67,7 +67,7 @@ async def listar_oficinas() -> list[dict]:
 
 async def fetch_oil_changes() -> list[dict]:
     """GET /admin/oil-changes — lista global de trocas."""
-    data = await _get_oleo("/admin/oil-changes")
+    data = await _get_oleo("/api/v1/oil-data/changes")
     if isinstance(data, list):
         return data
     return (data or {}).get("changes", []) or []
@@ -80,7 +80,7 @@ async def fetch_oil_changes_by_vehicle(vehicle_id: int) -> list[dict]:
         ts, cached = _OLEO_CACHE[vehicle_id]
         if now - ts < _TTL_OLEO:
             return cached
-    data = await _get_oleo(f"/oil-changes/by-vehicle/{vehicle_id}")
+    data = await _get_oleo(f"/api/v1/oil-data/changes/by-vehicle/{vehicle_id}")
     trocas = data if isinstance(data, list) else ((data or {}).get("changes", []))
     _OLEO_CACHE[vehicle_id] = (now, trocas)
     return trocas or []
@@ -88,7 +88,7 @@ async def fetch_oil_changes_by_vehicle(vehicle_id: int) -> list[dict]:
 
 async def fetch_odometer_logs() -> list[dict]:
     """GET /admin/odometer-logs — km registrado pelo motorista."""
-    data = await _get_oleo("/admin/odometer-logs")
+    data = await _get_oleo("/api/v1/oil-data/odometer")
     if isinstance(data, list):
         return data
     return (data or {}).get("logs", []) or []
@@ -115,7 +115,11 @@ async def sync_trocas_oleo(db: AsyncSession) -> dict:
         vehicle_id = t.get("vehicle_id")
         if not vehicle_id:
             continue
-        data_troca = _parse_iso(t.get("data_troca") or t.get("created_at"))
+        raw_dt = t.get("data_troca") or t.get("created_at")
+        # oil-data devolve date puro (YYYY-MM-DD) — completa com meia-noite
+        if raw_dt and len(str(raw_dt)) == 10:
+            raw_dt = f"{raw_dt}T00:00:00"
+        data_troca = _parse_iso(raw_dt)
         if not data_troca:
             continue
         dedup = hashlib.sha256(

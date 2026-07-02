@@ -41,6 +41,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:-demo-secret-trocar-em-prod-minimo-32-caracteres-aaaa}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:8765,https://manutencao.demos.napel.com.br}
       EVOLUTION_ENABLED: "false"
+      TROCA_OLEO_URL: ${TROCA_OLEO_URL:-https://troca-oleo.napel.com.br}
+      TROCA_OLEO_SYNC_SECRET: ${TROCA_OLEO_SYNC_SECRET:-}
+      PIPEFY_TOKEN: ${PIPEFY_TOKEN:-}
+      FROTA_BASE_URL: ${FROTA_BASE_URL:-https://frota.demos.napel.com.br}
+      FROTA_TOKEN: ${FROTA_TOKEN:-1234}
       FEATURE_SIGE_ENABLED: "false"
       STAGE: demo
       LOG_LEVEL: INFO

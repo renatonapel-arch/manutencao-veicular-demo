@@ -119,6 +119,170 @@ async def trigger_sync_all(
     return {"ok": True, "operacao": "sync-all", "frota": frota, "oleo": oleo}
 
 
+@router.post("/sync-oficinas")
+async def trigger_sync_oficinas(
+    user: User = Depends(require_role(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """Substitui o catálogo local pelas oficinas REAIS do troca-óleo.
+
+    - Puxa /api/v1/oficinas/list (25 oficinas dedupadas, dados reais)
+    - Upsert por nome_normalizado
+    - Zera CNPJ/telefone/avaliação fake das linhas seed antigas
+    - Desativa oficinas locais sem correspondência no catálogo real
+    """
+    from sqlalchemy import select as _select
+    from ..integrations.oleo_client import listar_oficinas
+    from ..integrations.oficinas_norm import normalize_office
+    from ..models import OficinaPadronizada
+
+    remotas = await listar_oficinas()
+    if not remotas:
+        return {"ok": False, "erro": "troca-óleo não devolveu oficinas"}
+
+    locais = list((await db.execute(_select(OficinaPadronizada))).scalars().all())
+    por_norm = {}
+    for o in locais:
+        n = normalize_office(o.nome)
+        if n:
+            por_norm.setdefault(n, o)
+
+    criadas = atualizadas = 0
+    vistos = set()
+    for r in remotas:
+        norm = r.get("nome_normalizado") or normalize_office(r.get("nome"))
+        if not norm:
+            continue
+        vistos.add(norm)
+        cidades = r.get("cidades") or []
+        alvo = por_norm.get(norm)
+        if alvo:
+            alvo.nome = r.get("nome") or alvo.nome
+            alvo.nome_normalizado = norm
+            alvo.cidade = cidades[0] if cidades else alvo.cidade
+            # limpa dado fake do seed antigo
+            alvo.cnpj = None
+            alvo.telefone = None
+            alvo.avaliacao = None
+            alvo.valor_servico_padrao = None
+            alvo.ativa = True
+            atualizadas += 1
+        else:
+            db.add(OficinaPadronizada(
+                nome=r.get("nome"), nome_normalizado=norm,
+                cidade=cidades[0] if cidades else None,
+                ativa=True,
+            ))
+            criadas += 1
+
+    desativadas = 0
+    for norm, o in por_norm.items():
+        if norm not in vistos:
+            o.ativa = False
+            desativadas += 1
+
+    await db.commit()
+    return {
+        "ok": True, "operacao": "sync-oficinas",
+        "criadas": criadas, "atualizadas": atualizadas,
+        "desativadas": desativadas, "total_remoto": len(remotas),
+    }
+
+
+@router.post("/reconciliar-oficinas-os")
+async def reconciliar_oficinas_os(
+    user: User = Depends(require_role(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """Preenche oficina_id das OS importadas do Pipefy (ficaram NULL no import).
+
+    Refaz o fetch do Pipefy só pra ler o campo Oficina de cada card e casa
+    com o catálogo via normalize_office. Idempotente.
+    """
+    import os as _os
+    import httpx as _httpx
+    from sqlalchemy import select as _select
+    from ..integrations.oficinas_norm import normalize_office
+    from ..models import OficinaPadronizada, OrdemServico
+
+    token = _os.getenv("PIPEFY_TOKEN")
+    if not token:
+        return {"ok": False, "erro": "PIPEFY_TOKEN ausente"}
+
+    # catálogo por nome normalizado
+    oficinas = list((await db.execute(_select(OficinaPadronizada))).scalars().all())
+    cat = {}
+    for o in oficinas:
+        n = o.nome_normalizado or normalize_office(o.nome)
+        if n:
+            cat[n] = o.id
+
+    # fetch paginado do pipe
+    query = """
+    query($cursor: String) {
+      cards(pipe_id: 304827831, first: 50, after: $cursor) {
+        edges { node { id fields { name value } } }
+        pageInfo { hasNextPage endCursor }
+      }
+    }"""
+    cards = []
+    cursor = None
+    async with _httpx.AsyncClient(timeout=30.0) as c:
+        while True:
+            r = await c.post(
+                "https://api.pipefy.com/graphql",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"query": query, "variables": ({"cursor": cursor} if cursor else {})},
+            )
+            data = r.json()["data"]["cards"]
+            cards += [e["node"] for e in data["edges"]]
+            if not data["pageInfo"]["hasNextPage"]:
+                break
+            cursor = data["pageInfo"]["endCursor"]
+
+    # card_id -> oficina normalizada
+    def _oficina_do_card(card):
+        for f in card.get("fields", []):
+            if f.get("name", "").lower().startswith("oficina"):
+                return f.get("value")
+        return None
+
+    from ..integrations.oficinas_norm import display_office
+
+    atualizadas = criadas = 0
+    for card in cards:
+        raw = _oficina_do_card(card)
+        norm = normalize_office(raw)
+        if not norm:
+            continue
+        oid = cat.get(norm)
+        if not oid:
+            # Oficina real do Pipefy que não está no catálogo do troca-óleo
+            # (oficinas de manutenção geral). Cria com o nome real do card.
+            nova = OficinaPadronizada(
+                nome=display_office(norm), nome_normalizado=norm, ativa=True,
+            )
+            db.add(nova)
+            await db.flush()
+            cat[norm] = nova.id
+            oid = nova.id
+            criadas += 1
+        stmt = _select(OrdemServico).where(OrdemServico.pipefy_card_id == str(card["id"]))
+        os_ = (await db.execute(stmt)).scalar_one_or_none()
+        if not os_:
+            continue
+        if os_.oficina_id != oid:
+            os_.oficina_id = oid
+            atualizadas += 1
+
+    await db.commit()
+    return {
+        "ok": True, "operacao": "reconciliar-oficinas-os",
+        "os_atualizadas": atualizadas, "oficinas_criadas_do_pipefy": criadas,
+        "total_cards": len(cards), "oficinas_catalogo": len(cat),
+    }
+
+
 @router.post("/import-pipefy")
 async def trigger_import_pipefy(
     dry_run: bool = False,
