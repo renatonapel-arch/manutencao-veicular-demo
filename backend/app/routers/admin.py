@@ -302,11 +302,16 @@ async def dedup_oficinas(
         select(OficinaPadronizada).where(OficinaPadronizada.ativa.is_(True))
     )).scalars().all())
 
+    # Re-normaliza com _ALIASES atual (o valor salvo em nome_normalizado pode
+    # ter sido calculado com uma versão anterior do normalize_office e ficaria
+    # velho). Aplica o novo nome_normalizado no proprio row.
     grupos: dict[str, list] = {}
     for o in todas:
-        norm = o.nome_normalizado or normalize_office(o.nome)
+        norm = normalize_office(o.nome) or o.nome_normalizado
         if not norm:
             continue
+        if o.nome_normalizado != norm:
+            o.nome_normalizado = norm
         grupos.setdefault(norm, []).append(o)
 
     fundidas = 0
