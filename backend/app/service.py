@@ -15,6 +15,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .dependencies import get_membro
+from .integrations.evolution_whatsapp import notify_os_transition
 from .models import (
     AuditoriaOs, MembroManutencao, OrdemServico, OsItemLinha, User,
 )
@@ -203,6 +204,19 @@ async def transicionar(
     )
     await db.commit()
     await db.refresh(os)
+
+    # Dispara notif de acordo com destino
+    evento_notif = {
+        "aberta":     "aberta",
+        "encerrada":  "encerrada",
+        "cancelada":  "reprovada" if status_anterior == "aguardando_aprovacao" else None,
+    }.get(novo_status)
+    if evento_notif:
+        try:
+            await notify_os_transition(db, os, evento_notif)
+        except Exception as exc:
+            log.warning("notify falhou (%s): %s", evento_notif, exc)
+
     return os
 
 
@@ -256,6 +270,12 @@ async def submeter_orcamento(
 
     await db.commit()
     await db.refresh(os)
+    try:
+        await notify_os_transition(
+            db, os, "auto_aprovada" if os.motivo_aprovacao == "auto" else "aguardando_aprovacao",
+        )
+    except Exception as exc:
+        log.warning("notify falhou (submeter): %s", exc)
     return os
 
 
@@ -285,6 +305,10 @@ async def aprovar(
     )
     await db.commit()
     await db.refresh(os)
+    try:
+        await notify_os_transition(db, os, "aprovada")
+    except Exception as exc:
+        log.warning("notify falhou (aprovar): %s", exc)
     return os
 
 
