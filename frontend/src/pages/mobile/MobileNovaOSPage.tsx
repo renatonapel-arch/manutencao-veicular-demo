@@ -90,20 +90,20 @@ export default function MobileNovaOSPage() {
   return (
     <section className="flex flex-col h-full">
       {/* Stepper */}
-      <div className="bg-white border-b border-border px-3 py-3 sticky top-0 z-10">
+      <div className="bg-white border-b border-line px-3 py-3 sticky top-0 z-10">
         <div className="flex items-center gap-1">
           {PASSOS.map((p, i) => (
             <div key={i} className="flex items-center flex-1 last:flex-initial">
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-medium ${
-                i < passo ? 'bg-success text-white' : i === passo ? 'bg-naval text-white' : 'bg-ink-200 text-ink-500'
-              }`}>{i < passo ? '✓' : i + 1}</div>
-              {i < PASSOS.length - 1 && <div className={`h-0.5 flex-1 ${i < passo ? 'bg-success' : 'bg-ink-200'}`}/>}
+                i < passo ? 'bg-ok text-white' : i === passo ? 'bg-navy-900 text-white' : 'bg-ink-200 text-ink-500'
+              }`}>{i < passo ? "✓" : i + 1}</div>
+              {i < PASSOS.length - 1 && <div className={`h-0.5 flex-1 ${i < passo ? 'bg-ok' : 'bg-ink-200'}`}/>}
             </div>
           ))}
         </div>
         <div className="flex justify-between text-[9px] text-ink-500 mt-1.5">
           {PASSOS.map((p, i) => (
-            <span key={i} className={i === passo ? 'text-naval font-semibold' : ''}>{p}</span>
+            <span key={i} className={i === passo ? 'text-navy-800 font-semibold' : ''}>{p}</span>
           ))}
         </div>
       </div>
@@ -117,7 +117,7 @@ export default function MobileNovaOSPage() {
             <select
               value={veiculoId}
               onChange={(e) => onSelectVeiculo(Number(e.target.value))}
-              className="w-full px-3 py-3 border border-border-strong rounded-lg bg-white"
+              className="w-full px-3 py-3 border border-line rounded-lg bg-white"
               style={{ minHeight: 48 }}
             >
               <option value="">— escolha o veículo —</option>
@@ -126,10 +126,10 @@ export default function MobileNovaOSPage() {
               ))}
             </select>
             {veiculoSel && (
-              <div className="bg-gelo border border-ceu-claro rounded-lg p-3 text-sm">
-                <div className="text-[10px] uppercase text-naval">KM atual (Patrimonial)</div>
+              <div className="bg-sky-bg border border-sky-500 rounded-lg p-3 text-sm">
+                <div className="text-[10px] uppercase text-navy-800">KM atual (Patrimonial)</div>
                 <div className="font-mono text-lg">{veiculoSel.km_atual.toLocaleString('pt-BR')}</div>
-                <div className="text-[10px] uppercase text-naval mt-2">Filial</div>
+                <div className="text-[10px] uppercase text-navy-800 mt-2">Filial</div>
                 <div>{veiculoSel.filial_id === 1 ? 'Maringá (100)' : veiculoSel.filial_id === 2 ? 'Ponta Grossa (700)' : 'LEM (900)'}</div>
               </div>
             )}
@@ -149,14 +149,14 @@ export default function MobileNovaOSPage() {
                 value={descricao}
                 onChange={(e) => setDescricao(e.target.value)}
                 placeholder="Ex: vazamento de óleo no motor"
-                className="w-full px-3 py-2 border border-border-strong rounded-lg h-24 text-sm"
+                className="w-full px-3 py-2 border border-line rounded-lg h-24 text-sm"
               />
             </div>
             <div className="flex gap-2">
-              <button onClick={() => setTipoOs('corretiva_manual')} className={`flex-1 py-3 rounded-lg border-2 font-medium ${tipoOs === 'corretiva_manual' ? 'border-danger bg-danger-bg text-danger-fg' : 'border-border text-ink-500'}`} style={{ minHeight: 48 }}>
+              <button onClick={() => setTipoOs('corretiva_manual')} className={`flex-1 py-3 rounded-lg border-2 font-medium ${tipoOs === 'corretiva_manual' ? 'border-err bg-err-bg text-err-fg' : 'border-line text-ink-500'}`} style={{ minHeight: 48 }}>
                 Corretiva
               </button>
-              <button onClick={() => setTipoOs('preventiva_automatica')} className={`flex-1 py-3 rounded-lg border-2 font-medium ${tipoOs === 'preventiva_automatica' ? 'border-success bg-success-bg text-success-fg' : 'border-border text-ink-500'}`} style={{ minHeight: 48 }}>
+              <button onClick={() => setTipoOs('preventiva_automatica')} className={`flex-1 py-3 rounded-lg border-2 font-medium ${tipoOs === 'preventiva_automatica' ? 'border-ok bg-ok-bg text-ok-fg' : 'border-line text-ink-500'}`} style={{ minHeight: 48 }}>
                 Preventiva
               </button>
             </div>
@@ -167,13 +167,13 @@ export default function MobileNovaOSPage() {
         {passo === 1 && (
           <>
             <div className="text-[11px] uppercase tracking-wider text-ink-500 font-medium">Oficina</div>
-            <div className="text-[11px] text-ink-500">Catálogo padronizado · texto livre <b className="text-danger-fg">bloqueado</b></div>
+            <div className="text-[11px] text-ink-500">Catálogo padronizado · texto livre <b className="text-err-fg">bloqueado</b></div>
             <div className="space-y-2">
               {(oficinas || []).map((o: any) => (
                 <button
                   key={o.id}
                   onClick={() => setOficinaId(o.id)}
-                  className={`w-full text-left p-3 border-2 rounded-lg ${oficinaId === o.id ? 'border-naval bg-gelo' : 'border-border bg-white'}`}
+                  className={`w-full text-left p-3 border-2 rounded-lg ${oficinaId === o.id ? 'border-naval bg-sky-bg' : 'border-line bg-white'}`}
                   style={{ minHeight: 64 }}
                 >
                   <div className="font-medium">{o.nome}</div>
@@ -190,50 +190,50 @@ export default function MobileNovaOSPage() {
             <div className="text-[11px] uppercase tracking-wider text-ink-500 font-medium">Itens (peças + serviços)</div>
             <div className="space-y-2">
               {itens.map((it, i) => (
-                <div key={i} className="bg-white border-2 border-border-strong rounded-lg p-3 space-y-2">
+                <div key={i} className="bg-white border-2 border-line rounded-lg p-3 space-y-2">
                   <div className="flex justify-between items-start">
                     <select
                       value={it.tipo_item}
                       onChange={(e) => updItem(i, { tipo_item: e.target.value as any })}
-                      className="px-2 py-1.5 border border-border rounded bg-white text-xs"
+                      className="px-2 py-1.5 border border-line rounded bg-white text-xs"
                     >
                       <option value="peca">Peça</option>
                       <option value="servico">Serviço</option>
                       <option value="ajuste">Ajuste</option>
                     </select>
-                    {itens.length > 1 && <button onClick={() => remItem(i)} className="text-danger text-lg">🗑</button>}
+                    {itens.length > 1 && <button onClick={() => remItem(i)} className="text-err-fg text-sm font-semibold px-2">Remover</button>}
                   </div>
                   <input
                     type="text"
                     placeholder="Ex: Junta cabeçote"
                     value={it.descricao}
                     onChange={(e) => updItem(i, { descricao: e.target.value })}
-                    className="w-full px-3 py-2 border border-border rounded text-sm"
+                    className="w-full px-3 py-2 border border-line rounded text-sm"
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="text-[10px] text-ink-500">Qtd</label>
-                      <input type="number" value={it.quantidade} onChange={(e) => updItem(i, { quantidade: Number(e.target.value) })} className="w-full px-2 py-1.5 border border-border rounded font-mono text-right" step="0.01"/>
+                      <input type="number" value={it.quantidade} onChange={(e) => updItem(i, { quantidade: Number(e.target.value) })} className="w-full px-2 py-1.5 border border-line rounded font-mono text-right" step="0.01"/>
                     </div>
                     <div>
                       <label className="text-[10px] text-ink-500">Valor unit. (R$)</label>
-                      <input type="number" value={it.valor_unitario} onChange={(e) => updItem(i, { valor_unitario: Number(e.target.value) })} className="w-full px-2 py-1.5 border border-border rounded font-mono text-right" step="0.01"/>
+                      <input type="number" value={it.valor_unitario} onChange={(e) => updItem(i, { valor_unitario: Number(e.target.value) })} className="w-full px-2 py-1.5 border border-line rounded font-mono text-right" step="0.01"/>
                     </div>
                   </div>
                   <div className="text-right text-sm">
                     <span className="text-ink-500">Subtotal: </span>
-                    <span className="font-mono font-medium text-naval">{fmtBRL((it.valor_unitario || 0) * (it.quantidade || 1))}</span>
+                    <span className="font-mono font-medium text-navy-800">{fmtBRL((it.valor_unitario || 0) * (it.quantidade || 1))}</span>
                   </div>
                 </div>
               ))}
               <button
                 onClick={addItem}
-                className="w-full border-2 border-dashed border-ink-300 text-naval rounded-lg py-3 font-medium"
+                className="w-full border-2 border-dashed border-ink-300 text-navy-800 rounded-lg py-3 font-medium"
                 style={{ minHeight: 48 }}
               >
                 + Adicionar item
               </button>
-              <div className="bg-naval text-white rounded-lg p-3 flex justify-between items-center">
+              <div className="bg-navy-900 text-white rounded-lg p-3 flex justify-between items-center">
                 <span className="text-xs uppercase tracking-wider">Total</span>
                 <span className="font-mono text-lg font-semibold">{fmtBRL(subtotal)}</span>
               </div>
@@ -245,7 +245,7 @@ export default function MobileNovaOSPage() {
         {passo === 3 && (
           <>
             <div className="text-[11px] uppercase tracking-wider text-ink-500 font-medium">Confirmar criação</div>
-            <div className="bg-white border border-border rounded-lg divide-y divide-border">
+            <div className="bg-white border border-line rounded-lg divide-y divide-border">
               <div className="px-3 py-2 flex justify-between">
                 <span className="text-[11px] text-ink-500">Veículo</span>
                 <span className="font-mono text-sm font-medium">{veiculoSel?.placa} · {veiculoSel?.modelo}</span>
@@ -266,20 +266,20 @@ export default function MobileNovaOSPage() {
                 <span className="text-[11px] text-ink-500">Itens</span>
                 <span className="text-sm">{itens.filter(it => it.descricao).length}</span>
               </div>
-              <div className="px-3 py-2 flex justify-between bg-gelo">
-                <span className="text-sm font-medium text-naval">Total</span>
-                <span className="font-mono text-lg font-semibold text-naval">{fmtBRL(subtotal)}</span>
+              <div className="px-3 py-2 flex justify-between bg-sky-bg">
+                <span className="text-sm font-medium text-navy-800">Total</span>
+                <span className="font-mono text-lg font-semibold text-navy-800">{fmtBRL(subtotal)}</span>
               </div>
             </div>
-            {erro && <div className="bg-danger-bg border border-danger text-danger-fg rounded p-2 text-sm">{erro}</div>}
+            {erro && <div className="bg-err-bg border border-err text-err-fg rounded p-2 text-sm">{erro}</div>}
           </>
         )}
       </div>
 
       {/* Bottom CTA */}
-      <div className="bg-white border-t border-border p-3 flex gap-2 sticky bottom-16 z-10" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="bg-white border-t border-line p-3 flex gap-2 sticky bottom-16 z-10" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
         {passo > 0 && (
-          <button onClick={() => setPasso(passo - 1)} className="flex-1 border border-border-strong text-naval rounded-lg font-medium" style={{ minHeight: 48 }}>
+          <button onClick={() => setPasso(passo - 1)} className="flex-1 border border-line text-navy-800 rounded-lg font-medium" style={{ minHeight: 48 }}>
             Voltar
           </button>
         )}
@@ -287,7 +287,7 @@ export default function MobileNovaOSPage() {
           <button
             onClick={() => setPasso(passo + 1)}
             disabled={!podeAvancar()}
-            className={`flex-1 rounded-lg font-semibold ${podeAvancar() ? 'bg-naval text-white' : 'bg-ink-200 text-ink-500'}`}
+            className={`flex-1 rounded-lg font-semibold ${podeAvancar() ? 'bg-navy-900 text-white' : 'bg-ink-200 text-ink-500'}`}
             style={{ minHeight: 48 }}
           >
             Próximo →
@@ -296,7 +296,7 @@ export default function MobileNovaOSPage() {
           <button
             onClick={() => createMut.mutate()}
             disabled={createMut.isPending}
-            className="flex-1 bg-success text-white rounded-lg font-semibold"
+            className="flex-1 bg-ok text-white rounded-lg font-semibold"
             style={{ minHeight: 48 }}
           >
             {createMut.isPending ? 'Criando...' : 'Criar OS ✓'}
