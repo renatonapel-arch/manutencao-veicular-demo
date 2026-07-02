@@ -1,6 +1,6 @@
 """Endpoints admin — reset + sync com apps Frota e Troca de Óleo (async)."""
 from fastapi import APIRouter, Depends
-from sqlalchemy import delete, func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
@@ -280,6 +280,60 @@ async def reconciliar_oficinas_os(
         "ok": True, "operacao": "reconciliar-oficinas-os",
         "os_atualizadas": atualizadas, "oficinas_criadas_do_pipefy": criadas,
         "total_cards": len(cards), "oficinas_catalogo": len(cat),
+    }
+
+
+@router.post("/dedup-oficinas")
+async def dedup_oficinas(
+    user: User = Depends(require_role(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """Funde oficinas duplicadas por nome_normalizado.
+
+    Para cada grupo de oficinas com o mesmo nome canônico:
+    - Mantém a de menor id (mais antiga) como canônica
+    - Reaponta todas as OS das outras para a canônica (UPDATE)
+    - Desativa (ativa=False) as duplicatas
+    Idempotente.
+    """
+    from ..integrations.oficinas_norm import normalize_office
+
+    todas = list((await db.execute(
+        select(OficinaPadronizada).where(OficinaPadronizada.ativa.is_(True))
+    )).scalars().all())
+
+    grupos: dict[str, list] = {}
+    for o in todas:
+        norm = o.nome_normalizado or normalize_office(o.nome)
+        if not norm:
+            continue
+        grupos.setdefault(norm, []).append(o)
+
+    fundidas = 0
+    os_reapontadas = 0
+
+    for norm, ofs in grupos.items():
+        if len(ofs) < 2:
+            continue
+        ofs.sort(key=lambda o: o.id)
+        canonica = ofs[0]
+        canonica.nome_normalizado = norm
+        for dup in ofs[1:]:
+            r = await db.execute(
+                update(OrdemServico)
+                .where(OrdemServico.oficina_id == dup.id)
+                .values(oficina_id=canonica.id)
+            )
+            os_reapontadas += int(r.rowcount or 0)
+            dup.ativa = False
+            fundidas += 1
+
+    await db.commit()
+    return {
+        "ok": True, "operacao": "dedup-oficinas",
+        "grupos_com_duplicatas": sum(1 for v in grupos.values() if len(v) > 1),
+        "fundidas": fundidas, "os_reapontadas": os_reapontadas,
+        "canonicas_ativas": len([g for g in grupos.values() if len(g) >= 1]),
     }
 
 
