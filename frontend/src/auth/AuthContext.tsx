@@ -22,10 +22,16 @@ interface AuthCtx {
 const Ctx = createContext<AuthCtx>({} as AuthCtx)
 
 // Modo demo: auto-login transparente como Hudson (admin global).
-// Para reativar a tela de login: definir VITE_AUTO_LOGIN=false no build.
-const AUTO_LOGIN_DEMO = true
+// SÓ ativa em modo standalone (fora do Clavis embarcado). Se estamos dentro
+// de um iframe do Clavis, o SSO manda — nunca voltamos pra auto-login local
+// porque isso confundiria "está logado como hudson@napel.local" quando o
+// user real é renato@napel.com.br via SSO.
 const AUTO_LOGIN_EMAIL = 'hudson@napel.local'
 const AUTO_LOGIN_SENHA = 'password123'
+
+function isEmbedded(): boolean {
+  try { return window.self !== window.top } catch { return true }
+}
 
 async function autoLogin(): Promise<{ token: string; user: User }> {
   const r = await api.post('/auth/login', { email: AUTO_LOGIN_EMAIL, senha: AUTO_LOGIN_SENHA })
@@ -39,8 +45,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const boot = async () => {
+      // 1) Captura JWT do hash fragment (redundância com main.tsx pra
+      //    cobrir race condition onde ssoBootstrap perdeu o hash)
+      const hash = window.location.hash || ''
+      if (hash.includes('access_token=')) {
+        const params = new URLSearchParams(hash.replace(/^#/, ''))
+        const tok = params.get('access_token')
+        if (tok) {
+          tokenStore.set(tok)
+          history.replaceState(null, '', window.location.pathname + window.location.search)
+        }
+      }
+
+      // 2) Tenta usar token existente
       const token = tokenStore.get()
-      // Tenta usar token existente
       if (token) {
         try {
           const r = await api.get<User>('/auth/me')
@@ -51,15 +69,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           tokenStore.clear()
         }
       }
-      // Sem token válido — auto-login se demo
-      if (AUTO_LOGIN_DEMO) {
-        try {
-          const { token: t, user: u } = await autoLogin()
-          tokenStore.set(t)
-          setUser(u)
-        } catch (e) {
-          console.error('Auto-login falhou:', e)
-        }
+
+      // 3) Embarcado no Clavis mas sem token/SSO válido → deixa cair na
+      //    tela de erro específica em vez de tela de login (que confunde
+      //    quem já está logado no Clavis).
+      if (isEmbedded()) {
+        setLoading(false)
+        return
+      }
+
+      // 4) Standalone (demo VPS): auto-login como Hudson pra pilotagem sem senha
+      try {
+        const { token: t, user: u } = await autoLogin()
+        tokenStore.set(t)
+        setUser(u)
+      } catch (e) {
+        console.error('Auto-login falhou:', e)
       }
       setLoading(false)
     }
@@ -84,16 +109,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tokenStore.clear()
     setUser(null)
     qc.clear()
-    if (AUTO_LOGIN_DEMO) {
-      // Re-faz auto-login transparente
-      try {
-        const { token: t, user: u } = await autoLogin()
-        tokenStore.set(t)
-        setUser(u)
-      } catch {
-        window.location.href = '/login'
-      }
-    } else {
+    if (isEmbedded()) {
+      // Dentro do Clavis: não force login local — só reload pra pegar novo JWT
+      window.location.reload()
+      return
+    }
+    // Standalone (demo): auto-login como Hudson
+    try {
+      const { token: t, user: u } = await autoLogin()
+      tokenStore.set(t)
+      setUser(u)
+    } catch {
       window.location.href = '/login'
     }
   }

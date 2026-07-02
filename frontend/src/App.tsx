@@ -29,10 +29,34 @@ import MobileNovaOSPage from './pages/mobile/MobileNovaOSPage'
 import MobilePerfilPage from './pages/mobile/MobilePerfilPage'
 import MobileNovoChecklistPage from './pages/mobile/MobileNovoChecklistPage'
 
+function isEmbedded(): boolean {
+  try { return window.self !== window.top } catch { return true }
+}
+
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth()
   if (loading) return <div className="p-6 text-ink-500">Carregando…</div>
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) {
+    // Embarcado (piloto Opção D) e sem sessão: mostra mensagem clara em vez
+    // de redirecionar pra /login com credenciais de demo.
+    if (isEmbedded()) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6 bg-page">
+          <div className="card p-8 max-w-md text-center">
+            <div className="display font-bold text-navy-900 mb-2">Sessão expirada</div>
+            <div className="text-sm text-ink-500 mb-4">
+              Não foi possível validar sua sessão do Clavis. Feche esta aba
+              e abra o Clavis de novo, ou clique em Recarregar.
+            </div>
+            <button onClick={() => window.location.reload()} className="btn btn-primary">
+              Recarregar
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return <Navigate to="/login" replace />
+  }
   return children
 }
 
