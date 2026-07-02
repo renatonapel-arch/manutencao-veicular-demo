@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api } from '../api/client'
 import { fmtKm, FilialChip } from '../components/Badges'
+import { DataTable } from '../components/DataTable'
 import { Icon } from '../components/Icons'
 import { useFilial } from '../context/FilialContext'
 
@@ -46,47 +47,52 @@ export default function FrotaPage() {
       </div>
 
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[680px]">
-            <thead>
-              <tr className="text-[11px] uppercase tracking-wider text-ink-500 bg-[#F8FBFD]">
-                <th className="text-left px-5 py-3 font-semibold">Placa</th>
-                <th className="text-left py-3 font-semibold">Modelo</th>
-                <th className="text-left py-3 font-semibold">Tipo</th>
-                <th className="text-left py-3 font-semibold">Filial</th>
-                <th className="text-right py-3 font-semibold">Km atual</th>
-                <th className="text-left px-5 py-3 font-semibold">CRLV vence</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && (
-                <tr><td colSpan={6} className="empty">Carregando…</td></tr>
-              )}
-              {!isLoading && !(veiculos || []).length && (
-                <tr>
-                  <td colSpan={6} className="empty py-14">
-                    <Icon name="car" size={44} />
-                    <div className="text-sm">Frota vazia. Rode o sync no Admin.</div>
-                  </td>
-                </tr>
-              )}
-              {(veiculos || []).map((v: any) => (
-                <tr key={v.id} className="row border-t border-line cursor-pointer"
-                    onClick={() => location.assign(`/veiculo/${v.placa}`)}>
-                  <td className="px-5 py-3 font-mono font-semibold text-navy-800">{v.placa}</td>
-                  <td className="py-3">
-                    <div className="font-semibold">{v.modelo}</div>
-                    {v.marca && <div className="text-xs text-ink-500">{v.marca}</div>}
-                  </td>
-                  <td className="py-3"><span className="pill pill-gray">{v.tipo || '—'}</span></td>
-                  <td className="py-3"><FilialChip filialId={v.filial_id} /></td>
-                  <td className="py-3 text-right font-mono num">{fmtKm(v.km_atual)}</td>
-                  <td className="px-5 py-3 font-mono text-xs text-ink-500">{v.vencimento_crlv || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          data={veiculos || []}
+          loading={isLoading}
+          rowKey={(v: any) => v.id}
+          onRowClick={(v: any) => location.assign(`/veiculo/${v.placa}`)}
+          emptyMessage="Frota vazia. Rode o sync no Admin."
+          columns={[
+            {
+              key: 'placa', label: 'Placa',
+              accessor: (v: any) => v.placa, filter: true,
+              render: (v: any) => <span className="font-mono font-semibold text-navy-800">{v.placa}</span>,
+            },
+            {
+              key: 'modelo', label: 'Modelo',
+              accessor: (v: any) => v.modelo || '', filter: true,
+              render: (v: any) => (
+                <>
+                  <div className="font-semibold">{v.modelo}</div>
+                  {v.marca && <div className="text-xs text-ink-500">{v.marca}</div>}
+                </>
+              ),
+            },
+            {
+              key: 'tipo', label: 'Tipo',
+              accessor: (v: any) => v.tipo || '', filter: true,
+              render: (v: any) => <span className="pill pill-gray">{v.tipo || '—'}</span>,
+            },
+            {
+              key: 'filial_id', label: 'Filial',
+              accessor: (v: any) => v.filial_id, filter: true,
+              render: (v: any) => <FilialChip filialId={v.filial_id} />,
+            },
+            {
+              key: 'km_atual', label: 'Km atual', align: 'right',
+              accessor: (v: any) => Number(v.km_atual || 0),
+              cellClassName: 'font-mono num',
+              render: (v: any) => fmtKm(v.km_atual),
+            },
+            {
+              key: 'vencimento_crlv', label: 'CRLV vence',
+              accessor: (v: any) => v.vencimento_crlv || '', filter: true,
+              cellClassName: 'font-mono text-xs text-ink-500',
+              render: (v: any) => v.vencimento_crlv || '—',
+            },
+          ]}
+        />
       </div>
     </section>
   )

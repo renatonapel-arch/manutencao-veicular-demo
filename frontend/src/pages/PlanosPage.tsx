@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
+import { DataTable } from '../components/DataTable'
 import EmptyState from '../components/EmptyState'
 
 interface PlanoForm {
@@ -111,41 +112,59 @@ export default function PlanosPage() {
           }
         />
       ) : (
-        <div className="bg-white border border-border rounded overflow-hidden">
-          <table className="w-full text-[12px] dense">
-            <thead className="bg-ink-50 text-ink-500 border-b border-border">
-              <tr>
-                <th className="text-left">Modelo</th>
-                <th className="text-left">Item</th>
-                <th className="text-right">Intervalo km</th>
-                <th className="text-right">Intervalo dias</th>
-                <th className="text-right">Antecedência</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(planos || []).map((p: any) => (
-                <tr key={p.id} className="border-t border-border hover:bg-ink-50">
-                  <td>{p.modelo_veiculo}</td>
-                  <td>{p.item}</td>
-                  <td className="text-right font-mono">{p.km_intervalo?.toLocaleString('pt-BR') || '—'}</td>
-                  <td className="text-right font-mono">{p.dias_intervalo || '—'}</td>
-                  <td className="text-right font-mono">{p.antecedencia_dias}d</td>
-                  <td><span className={`badge ${p.ativo ? 'bg-success-bg text-success-fg' : 'bg-ink-200 text-ink-500'}`}>{p.ativo ? 'Ativo' : 'Inativo'}</span></td>
-                  <td>
-                    <button
-                      onClick={() => onDelete(p.id, p.modelo_veiculo, p.item)}
-                      className="text-ink-400 hover:text-danger-fg px-2"
-                      title="Apagar plano"
-                    >
-                      🗑
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="card overflow-hidden">
+          <DataTable
+            data={planos || []}
+            rowKey={(p: any) => p.id}
+            emptyMessage="Nenhum plano cadastrado."
+            columns={[
+              {
+                key: 'modelo_veiculo', label: 'Modelo',
+                accessor: (p: any) => p.modelo_veiculo || '', filter: true,
+                render: (p: any) => p.modelo_veiculo,
+              },
+              {
+                key: 'item', label: 'Item',
+                accessor: (p: any) => p.item || '', filter: true,
+                render: (p: any) => p.item,
+              },
+              {
+                key: 'km_intervalo', label: 'Intervalo km', align: 'right',
+                accessor: (p: any) => Number(p.km_intervalo || 0),
+                cellClassName: 'font-mono num',
+                render: (p: any) => p.km_intervalo?.toLocaleString('pt-BR') || '—',
+              },
+              {
+                key: 'dias_intervalo', label: 'Intervalo dias', align: 'right',
+                accessor: (p: any) => Number(p.dias_intervalo || 0),
+                cellClassName: 'font-mono num',
+                render: (p: any) => p.dias_intervalo || '—',
+              },
+              {
+                key: 'antecedencia_dias', label: 'Antecedência', align: 'right',
+                accessor: (p: any) => Number(p.antecedencia_dias || 0),
+                cellClassName: 'font-mono num',
+                render: (p: any) => `${p.antecedencia_dias}d`,
+              },
+              {
+                key: 'ativo', label: 'Status',
+                accessor: (p: any) => p.ativo ? 'Ativo' : 'Inativo', filter: true,
+                render: (p: any) => <span className={`pill ${p.ativo ? 'pill-ok' : 'pill-gray'}`}>{p.ativo ? 'Ativo' : 'Inativo'}</span>,
+              },
+              {
+                key: 'acoes', label: '',
+                render: (p: any) => (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(p.id, p.modelo_veiculo, p.item) }}
+                    className="text-ink-400 hover:text-err-fg px-2 text-xs font-semibold"
+                    title="Apagar plano"
+                  >
+                    Remover
+                  </button>
+                ),
+              },
+            ]}
+          />
         </div>
       )}
 

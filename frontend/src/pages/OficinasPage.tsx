@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { FilialChip } from '../components/Badges'
+import { DataTable } from '../components/DataTable'
 import EmptyState from '../components/EmptyState'
 
 const ESPECIALIDADES = ['moto', 'carro', 'caminhao', 'pneu', 'eletrica', 'empilhadeira', 'geral']
@@ -114,45 +115,69 @@ export default function OficinasPage() {
           }
         />
       ) : (
-        <div className="bg-white border border-border rounded overflow-hidden">
-          <table className="w-full text-[12px] dense">
-            <thead className="bg-ink-50 text-ink-500 border-b border-border">
-              <tr>
-                <th className="text-left">Nome</th>
-                <th className="text-left">CNPJ</th>
-                <th className="text-left">Cidade/UF</th>
-                <th className="text-left">Especialidade</th>
-                <th className="text-left">Filial</th>
-                <th className="text-right">Ticket médio</th>
-                <th className="text-center">Avaliação</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {(oficinas || []).map((o: any) => (
-                <tr key={o.id} className="border-t border-border hover:bg-ink-50">
-                  <td className="font-medium">{o.nome}</td>
-                  <td className="font-mono text-[10px]">{o.cnpj || '—'}</td>
-                  <td>{o.cidade ? `${o.cidade} / ${o.uf}` : '—'}</td>
-                  <td><span className="badge bg-info-bg text-info-fg">{o.especialidade || '—'}</span></td>
-                  <td>{o.filial_id_preferencial ? <FilialChip filialId={o.filial_id_preferencial}/> : '—'}</td>
-                  <td className="text-right font-mono">{o.valor_servico_padrao ? `R$ ${Number(o.valor_servico_padrao).toFixed(0)}` : '—'}</td>
-                  <td className="text-center text-warn">★ {o.avaliacao || '—'}</td>
-                  <td><span className="badge bg-success-bg text-success-fg">Ativo</span></td>
-                  <td>
-                    <button
-                      onClick={() => onDelete(o.id, o.nome)}
-                      className="text-ink-400 hover:text-danger-fg px-2"
-                      title="Desativar oficina"
-                    >
-                      🗑
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="card overflow-hidden">
+          <DataTable
+            data={oficinas || []}
+            rowKey={(o: any) => o.id}
+            emptyMessage="Sem oficinas cadastradas."
+            columns={[
+              {
+                key: 'nome', label: 'Nome',
+                accessor: (o: any) => o.nome || '', filter: true,
+                render: (o: any) => <span className="font-semibold">{o.nome}</span>,
+              },
+              {
+                key: 'cnpj', label: 'CNPJ',
+                accessor: (o: any) => o.cnpj || '', filter: true,
+                cellClassName: 'font-mono text-xs',
+                render: (o: any) => o.cnpj || '—',
+              },
+              {
+                key: 'cidade', label: 'Cidade/UF',
+                accessor: (o: any) => o.cidade || '', filter: true,
+                render: (o: any) => o.cidade ? `${o.cidade} / ${o.uf || ''}` : '—',
+              },
+              {
+                key: 'especialidade', label: 'Especialidade',
+                accessor: (o: any) => o.especialidade || '', filter: true,
+                render: (o: any) => <span className="pill pill-sky">{o.especialidade || '—'}</span>,
+              },
+              {
+                key: 'filial_id_preferencial', label: 'Filial',
+                accessor: (o: any) => o.filial_id_preferencial ?? 0, filter: true,
+                render: (o: any) => o.filial_id_preferencial ? <FilialChip filialId={o.filial_id_preferencial}/> : '—',
+              },
+              {
+                key: 'valor_servico_padrao', label: 'Ticket médio', align: 'right',
+                accessor: (o: any) => Number(o.valor_servico_padrao || 0),
+                cellClassName: 'font-mono num',
+                render: (o: any) => o.valor_servico_padrao ? `R$ ${Number(o.valor_servico_padrao).toFixed(0)}` : '—',
+              },
+              {
+                key: 'avaliacao', label: 'Avaliação', align: 'center',
+                accessor: (o: any) => Number(o.avaliacao || 0),
+                cellClassName: 'text-warn-fg',
+                render: (o: any) => `★ ${o.avaliacao || '—'}`,
+              },
+              {
+                key: 'ativa', label: 'Status',
+                accessor: (o: any) => o.ativa ? 'Ativo' : 'Inativo',
+                render: () => <span className="pill pill-ok">Ativo</span>,
+              },
+              {
+                key: 'acoes', label: '',
+                render: (o: any) => (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(o.id, o.nome) }}
+                    className="text-ink-400 hover:text-err-fg px-2 text-xs font-semibold"
+                    title="Desativar oficina"
+                  >
+                    Remover
+                  </button>
+                ),
+              },
+            ]}
+          />
         </div>
       )}
 

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { fmtBRL, fmtData, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
+import { DataTable } from '../components/DataTable'
 import { Icon } from '../components/Icons'
 import { useFilial } from '../context/FilialContext'
 
@@ -97,61 +98,66 @@ export default function ListaOSPage() {
 
       {/* Tabela */}
       <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[760px]">
-            <thead>
-              <tr className="text-[11px] uppercase tracking-wider text-ink-500 bg-[#F8FBFD]">
-                <th className="text-left px-5 py-3 font-semibold">OS</th>
-                <th className="text-left py-3 font-semibold">Aberta em</th>
-                <th className="text-left py-3 font-semibold">Veículo</th>
-                <th className="text-left py-3 font-semibold">Filial</th>
-                <th className="text-left py-3 font-semibold">Categoria</th>
-                <th className="text-left py-3 font-semibold">Tipo</th>
-                <th className="text-left py-3 font-semibold">Status</th>
-                <th className="text-right px-5 py-3 font-semibold">Valor</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading && (
-                <tr><td colSpan={8} className="empty">Carregando…</td></tr>
-              )}
-              {!isLoading && !(data?.data || []).length && (
-                <tr>
-                  <td colSpan={8} className="empty py-14">
-                    <Icon name="wrench" size={44} />
-                    <div className="text-sm">
-                      Nenhuma OS com esses filtros.{' '}
-                      <Link to="/os/nova" className="text-sky-700 font-semibold">Abrir uma ordem</Link>.
-                    </div>
-                  </td>
-                </tr>
-              )}
-              {(data?.data || []).map((os: any) => (
-                <tr
-                  key={os.id}
-                  className="row border-t border-line cursor-pointer"
-                  onClick={() => location.assign(`/os/${os.id}`)}
-                >
-                  <td className="px-5 py-3.5 font-mono font-semibold text-navy-800">#{os.id}</td>
-                  <td className="py-3.5 font-mono text-xs text-ink-500">{fmtData(os.data_abertura)}</td>
-                  <td className="py-3.5">
-                    <div className="font-semibold">{os.veiculo_modelo || '—'}</div>
-                    <div className="text-xs text-ink-500 font-mono">{os.veiculo_placa}</div>
-                  </td>
-                  <td className="py-3.5"><FilialChip filialId={os.filial_id} /></td>
-                  <td className="py-3.5">
-                    {os.categoria
-                      ? <span className="pill pill-sky">{os.categoria}</span>
-                      : <span className="text-ink-400">—</span>}
-                  </td>
-                  <td className="py-3.5"><TipoBadge tipo={os.tipo_os} /></td>
-                  <td className="py-3.5"><StatusBadge status={os.status} /></td>
-                  <td className="px-5 py-3.5 text-right font-mono num font-semibold">{fmtBRL(os.valor_total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          data={data?.data || []}
+          loading={isLoading}
+          rowKey={(os: any) => os.id}
+          onRowClick={(os: any) => location.assign(`/os/${os.id}`)}
+          emptyMessage="Nenhuma OS com esses filtros."
+          columns={[
+            {
+              key: 'id', label: 'OS',
+              accessor: (o: any) => o.id, filter: true,
+              render: (o: any) => <span className="font-mono font-semibold text-navy-800">#{o.id}</span>,
+            },
+            {
+              key: 'data_abertura', label: 'Aberta em',
+              accessor: (o: any) => o.data_abertura,
+              render: (o: any) => <span className="font-mono text-xs text-ink-500">{fmtData(o.data_abertura)}</span>,
+            },
+            {
+              key: 'veiculo', label: 'Veículo',
+              accessor: (o: any) => o.veiculo_placa || o.veiculo_modelo || '',
+              filter: (o: any, q: string) =>
+                (o.veiculo_placa || '').toLowerCase().includes(q) ||
+                (o.veiculo_modelo || '').toLowerCase().includes(q),
+              render: (o: any) => (
+                <>
+                  <div className="font-semibold">{o.veiculo_modelo || '—'}</div>
+                  <div className="text-xs text-ink-500 font-mono">{o.veiculo_placa}</div>
+                </>
+              ),
+            },
+            {
+              key: 'filial_id', label: 'Filial',
+              accessor: (o: any) => o.filial_id, filter: true,
+              render: (o: any) => <FilialChip filialId={o.filial_id} />,
+            },
+            {
+              key: 'categoria', label: 'Categoria',
+              accessor: (o: any) => o.categoria || '', filter: true,
+              render: (o: any) => o.categoria
+                ? <span className="pill pill-sky">{o.categoria}</span>
+                : <span className="text-ink-400">—</span>,
+            },
+            {
+              key: 'tipo_os', label: 'Tipo',
+              accessor: (o: any) => o.tipo_os || '', filter: true,
+              render: (o: any) => <TipoBadge tipo={o.tipo_os} />,
+            },
+            {
+              key: 'status', label: 'Status',
+              accessor: (o: any) => o.status, filter: true,
+              render: (o: any) => <StatusBadge status={o.status} />,
+            },
+            {
+              key: 'valor_total', label: 'Valor', align: 'right',
+              accessor: (o: any) => Number(o.valor_total || 0), filter: true,
+              cellClassName: 'font-mono num font-semibold',
+              render: (o: any) => fmtBRL(o.valor_total),
+            },
+          ]}
+        />
         <div className="px-5 py-3 border-t border-line bg-[#F8FBFD] flex items-center justify-between text-xs text-ink-500">
           <span>
             {data?.total

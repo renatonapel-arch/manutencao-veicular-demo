@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { fmtDataHora } from '../components/Badges'
+import { DataTable } from '../components/DataTable'
 import EmptyState from '../components/EmptyState'
 import { useFilial } from '../context/FilialContext'
 
@@ -59,34 +60,53 @@ export default function AlertasPage() {
           cta={<button onClick={() => setStatusFiltro('')} className="text-xs text-naval underline">Voltar à listagem</button>}
         />
       ) : (
-        <div className="bg-white border border-border rounded overflow-hidden">
-          <table className="w-full text-[12px] dense">
-            <thead className="bg-ink-50 text-ink-500 border-b border-border">
-              <tr>
-                <th className="text-left">Data/Hora</th>
-                <th className="text-left">OS</th>
-                <th className="text-left">Template</th>
-                <th className="text-left">Telefone</th>
-                <th>Status</th>
-                <th className="text-center">Retry</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(alertas || []).length === 0 && (
-                <tr><td colSpan={6} className="text-center text-ink-500 py-6">Nenhum alerta no período.</td></tr>
-              )}
-              {(alertas || []).map((a: any) => (
-                <tr key={a.id} className="border-t border-border hover:bg-ink-50">
-                  <td className="font-mono">{fmtDataHora(a.created_at)}</td>
-                  <td className="font-mono">{a.os_id ? `#${a.os_id}` : '—'}</td>
-                  <td>{a.template_name}</td>
-                  <td className="font-mono">{a.telefone}</td>
-                  <td><span className={`badge ${a.status === 'sent' ? 'bg-success-bg text-success-fg' : a.status === 'failed' ? 'bg-danger-bg text-danger-fg' : 'bg-warn-bg text-warn-fg'}`}>{a.status}</span></td>
-                  <td className="text-center font-mono">{a.retry_count}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="card overflow-hidden">
+          <DataTable
+            data={alertas || []}
+            rowKey={(a: any) => a.id}
+            emptyMessage="Nenhum alerta no período."
+            defaultSort={{ key: 'created_at', dir: 'desc' }}
+            columns={[
+              {
+                key: 'created_at', label: 'Data/Hora',
+                accessor: (a: any) => a.created_at,
+                cellClassName: 'font-mono text-xs',
+                render: (a: any) => fmtDataHora(a.created_at),
+              },
+              {
+                key: 'os_id', label: 'OS',
+                accessor: (a: any) => a.os_id || 0, filter: true,
+                cellClassName: 'font-mono',
+                render: (a: any) => a.os_id ? `#${a.os_id}` : '—',
+              },
+              {
+                key: 'template_name', label: 'Template',
+                accessor: (a: any) => a.template_name || '', filter: true,
+                render: (a: any) => a.template_name,
+              },
+              {
+                key: 'telefone', label: 'Telefone',
+                accessor: (a: any) => a.telefone || '', filter: true,
+                cellClassName: 'font-mono',
+                render: (a: any) => a.telefone,
+              },
+              {
+                key: 'status', label: 'Status',
+                accessor: (a: any) => a.status, filter: true,
+                render: (a: any) => (
+                  <span className={`pill ${a.status === 'sent' ? 'pill-ok' : a.status === 'failed' ? 'pill-err' : 'pill-warn'}`}>
+                    {a.status}
+                  </span>
+                ),
+              },
+              {
+                key: 'retry_count', label: 'Retry', align: 'center',
+                accessor: (a: any) => Number(a.retry_count || 0),
+                cellClassName: 'font-mono num',
+                render: (a: any) => a.retry_count,
+              },
+            ]}
+          />
         </div>
       )}
     </section>

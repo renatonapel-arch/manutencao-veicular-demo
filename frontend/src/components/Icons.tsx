@@ -72,6 +72,14 @@ const PATHS: Record<string, JSX.Element> = {
       <path d="M5 12l7 7 7-7" />
     </>
   ),
+  sort: (
+    <>
+      <path d="M7 4v16" />
+      <path d="M4 7l3-3 3 3" />
+      <path d="M17 20V4" />
+      <path d="M14 17l3 3 3-3" />
+    </>
+  ),
   'chevron-right': <path d="M9 6l6 6-6 6" />,
   'chevron-left': <path d="M15 6l-6 6 6 6" />,
   car: (

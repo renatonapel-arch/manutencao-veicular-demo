@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { fmtBRL, StatusBadge } from '../components/Badges'
+import { DataTable } from '../components/DataTable'
 import { Icon } from '../components/Icons'
 import { useFilial } from '../context/FilialContext'
 
@@ -186,36 +187,48 @@ export default function DashboardPage() {
             Ver todas <Icon name="chevron-right" size={14} />
           </Link>
         </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-[11px] uppercase tracking-wider text-ink-500 bg-[#F8FBFD]">
-              <th className="text-left px-6 py-3 font-semibold">OS</th>
-              <th className="text-left py-3 font-semibold">Veículo</th>
-              <th className="text-left py-3 font-semibold">Categoria</th>
-              <th className="text-left py-3 font-semibold">Status</th>
-              <th className="text-right px-6 py-3 font-semibold">Valor</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(ultimas?.data || []).map((os: any) => (
-              <tr key={os.id} className="row border-t border-line cursor-pointer" onClick={() => location.assign(`/os/${os.id}`)}>
-                <td className="px-6 py-4 font-mono font-semibold text-navy-800">#{os.id}</td>
-                <td className="py-4">
-                  <div className="font-semibold">{os.veiculo_modelo || '—'}</div>
-                  <div className="text-xs text-ink-500 font-mono">{os.veiculo_placa}</div>
-                </td>
-                <td className="py-4">
-                  {os.categoria ? <span className="pill pill-sky">{os.categoria}</span> : <span className="text-ink-400">—</span>}
-                </td>
-                <td className="py-4"><StatusBadge status={os.status} /></td>
-                <td className="px-6 py-4 text-right font-mono num font-semibold">{fmtBRL(os.valor_total)}</td>
-              </tr>
-            ))}
-            {!(ultimas?.data || []).length && (
-              <tr><td colSpan={5} className="empty">Nenhuma OS ainda.</td></tr>
-            )}
-          </tbody>
-        </table>
+        <DataTable
+          data={ultimas?.data || []}
+          rowKey={(o: any) => o.id}
+          onRowClick={(o: any) => location.assign(`/os/${o.id}`)}
+          emptyMessage="Nenhuma OS ainda."
+          columns={[
+            {
+              key: 'id', label: 'OS',
+              accessor: (o: any) => o.id, filter: true,
+              render: (o: any) => <span className="font-mono font-semibold text-navy-800">#{o.id}</span>,
+            },
+            {
+              key: 'veiculo', label: 'Veículo',
+              accessor: (o: any) => o.veiculo_placa || o.veiculo_modelo || '',
+              filter: (o: any, q: string) =>
+                (o.veiculo_placa || '').toLowerCase().includes(q) ||
+                (o.veiculo_modelo || '').toLowerCase().includes(q),
+              render: (o: any) => (
+                <>
+                  <div className="font-semibold">{o.veiculo_modelo || '—'}</div>
+                  <div className="text-xs text-ink-500 font-mono">{o.veiculo_placa}</div>
+                </>
+              ),
+            },
+            {
+              key: 'categoria', label: 'Categoria',
+              accessor: (o: any) => o.categoria || '', filter: true,
+              render: (o: any) => o.categoria ? <span className="pill pill-sky">{o.categoria}</span> : <span className="text-ink-400">—</span>,
+            },
+            {
+              key: 'status', label: 'Status',
+              accessor: (o: any) => o.status, filter: true,
+              render: (o: any) => <StatusBadge status={o.status} />,
+            },
+            {
+              key: 'valor_total', label: 'Valor', align: 'right',
+              accessor: (o: any) => Number(o.valor_total || 0),
+              cellClassName: 'font-mono num font-semibold',
+              render: (o: any) => fmtBRL(o.valor_total),
+            },
+          ]}
+        />
       </div>
     </section>
   )
