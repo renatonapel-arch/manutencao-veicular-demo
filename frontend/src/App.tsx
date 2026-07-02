@@ -19,6 +19,7 @@ import TimelineVeiculoPage from './pages/TimelineVeiculoPage'
 import MobilePage from './pages/MobilePage'
 import AprovacoesPage from './pages/AprovacoesPage'
 import FrotaPage from './pages/FrotaPage'
+import ChecklistsPage from './pages/ChecklistsPage'
 
 // Mobile dedicado
 import MobileHomePage from './pages/mobile/MobileHomePage'
@@ -26,6 +27,7 @@ import MobileListaOSPage from './pages/mobile/MobileListaOSPage'
 import MobileDetalheOSPage from './pages/mobile/MobileDetalheOSPage'
 import MobileNovaOSPage from './pages/mobile/MobileNovaOSPage'
 import MobilePerfilPage from './pages/mobile/MobilePerfilPage'
+import MobileNovoChecklistPage from './pages/mobile/MobileNovoChecklistPage'
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth()
@@ -61,6 +63,8 @@ export default function App() {
         <Route path="frota"            element={<FrotaPage />} />
         <Route path="oficinas"         element={<OficinasPage />} />
         <Route path="alertas"          element={<AlertasPage />} />
+        <Route path="checklists"       element={<ChecklistsPage />} />
+        <Route path="checklist/novo"   element={<MobileNovoChecklistPage />} />
         <Route path="veiculo/:placa"   element={<TimelineVeiculoPage />} />
         <Route path="mobile"           element={<MobilePage />} />
 

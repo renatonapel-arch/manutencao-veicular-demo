@@ -87,8 +87,34 @@ async def get_timeline(
     except Exception as e:
         warnings.append(f"Trocas de óleo temporariamente indisponíveis: {e}")
 
-    # ---- Fonte 3: Checklist V2 — placeholder ----
-    warnings.append("Checklist eletrônico indisponível — disponível a partir da Fase 2 (V2)")
+    # ---- Fonte 3: Checklist V2 (mensal) ----
+    try:
+        from ..models import ChecklistVeiculo
+        checklists = list((await db.execute(
+            select(ChecklistVeiculo)
+            .where(
+                ChecklistVeiculo.veiculo_id == veiculo_id,
+                ChecklistVeiculo.deleted_at.is_(None),
+            )
+            .order_by(ChecklistVeiculo.data_checklist.desc())
+            .limit(30)
+        )).scalars().all())
+        for c in checklists:
+            itens = c.itens_status or {}
+            n_prob = sum(1 for v in itens.values() if v == "PROBLEMA")
+            n_ok = sum(1 for v in itens.values() if v == "OK")
+            titulo = f"Checklist mensal · {n_ok} OK · {n_prob} problema{'s' if n_prob != 1 else ''}"
+            items.append(TimelineItem(
+                tipo="checklist_v2",
+                data=c.data_checklist,
+                titulo=titulo,
+                descricao=f"km {c.km_veiculo:,}".replace(",", ".") + (f" · gerou {len(c.os_geradas or [])} OS" if c.os_geradas else ""),
+                subtipo=c.tipo_veiculo,
+                status="ok" if n_prob == 0 else "warn",
+                ref_id=c.id,
+            ))
+    except Exception as e:
+        warnings.append(f"Checklists indisponíveis: {e}")
 
     # ---- Fonte 4: Patrimonial (CRLV) ----
     if v.vencimento_crlv:

@@ -18,9 +18,11 @@ export default function MobilePerfilPage() {
   const iniciais = user.nome.split(' ').slice(0, 2).map(s => s[0]).join('').toUpperCase()
 
   const shortcuts: Item[] = [
-    { to: '/oficinas', icon: 'store',    label: 'Catálogo de oficinas' },
-    { to: '/planos',   icon: 'calendar', label: 'Planos preventivos' },
-    { to: '/frota',    icon: 'car',      label: 'Frota (leitura)' },
+    { to: '/checklist/novo', icon: 'check-square', label: 'Novo checklist mensal' },
+    { to: '/checklists',     icon: 'check',        label: 'Histórico de checklists' },
+    { to: '/oficinas',       icon: 'store',        label: 'Catálogo de oficinas' },
+    { to: '/planos',         icon: 'calendar',     label: 'Planos preventivos' },
+    { to: '/frota',          icon: 'car',          label: 'Frota (leitura)' },
   ]
   const conta: Item[] = [
     { to: '/login',    icon: 'refresh', label: 'Trocar de usuário' },

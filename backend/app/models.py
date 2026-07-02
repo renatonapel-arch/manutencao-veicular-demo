@@ -440,3 +440,49 @@ class AlertaHistory(Base):
         Index("idx_alert_phone_date", "telefone", "created_at"),
         Index("idx_alert_status", "status", "created_at"),
     )
+
+
+# ================================================================
+# Checklist mensal (V2) — substitui pipe "Custos - Checklist Veiculos"
+# do Pipefy. Cada item marcado como problema gera 1 OS corretiva
+# automaticamente. Alertas quando veiculo passa 30 dias sem checklist.
+# ================================================================
+
+class ChecklistVeiculo(Base):
+    __tablename__ = "checklist_veiculo"
+
+    id = Column(Integer, primary_key=True)
+    request_id = Column(UUID(as_uuid=True), unique=True, nullable=False)
+    veiculo_id = Column(Integer, ForeignKey("veiculo_snapshot.id"), nullable=False, index=True)
+    funcionario_relator_id = Column(Integer)
+    aberto_por_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    filial_id = Column(Integer, nullable=False, index=True)
+    tipo_veiculo = Column(String(10), nullable=False)  # moto | carro
+    km_veiculo = Column(Integer, nullable=False)
+    data_checklist = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    # Estrutura: {"item": "OK|PROBLEMA|N/A", ...}
+    itens_status = Column(JSONB, nullable=False, default=dict)
+    observacao = Column(Text)
+    # OS geradas automaticamente a partir dos problemas
+    os_geradas = Column(JSONB, default=list)  # [os_id, os_id, ...]
+    deleted_at = Column(DateTime(timezone=True))
+
+    veiculo = relationship("VeiculoSnapshot")
+
+    __table_args__ = (
+        _check_in("tipo_veiculo", ("moto", "carro"), "ck_checklist_tipo"),
+        Index("idx_checklist_veiculo_data", "veiculo_id", "data_checklist"),
+    )
+
+
+class AnexosChecklist(Base):
+    __tablename__ = "anexos_checklist"
+
+    id = Column(Integer, primary_key=True)
+    checklist_id = Column(Integer, ForeignKey("checklist_veiculo.id"), nullable=False, index=True)
+    tipo = Column(String(40), nullable=False)  # foto_problema | foto_pneu_di | foto_pneu_tr | foto_pneu_di_pass | foto_pneu_tr_pass
+    caminho_arquivo = Column(Text, nullable=False)
+    mime = Column(String(60))
+    size_bytes = Column(Integer)
+    sha1 = Column(String(40))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
