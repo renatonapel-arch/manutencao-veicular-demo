@@ -13,6 +13,15 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_TTL_HOURS: int = 24
 
+    # JWT do Clavis (HS256) — quando setado, o backend tenta validar tokens do
+    # Clavis primeiro pra permitir SSO no piloto (Opção D). Auto-provisiona user
+    # local no primeiro acesso (email -> user + role mapeada). Este backend
+    # NUNCA emite tokens com esse secret; só valida (nunca "forja" JWT).
+    CLAVIS_JWT_SECRET: str = ""
+    # Allowlist CSV — só emails listados aqui têm acesso quando SSO Clavis
+    # está ligado. Vazio = todos que vierem com JWT válido do Clavis passam.
+    CLAVIS_ALLOWED_EMAILS: str = ""
+
     EVOLUTION_ENABLED: bool = False
     FEATURE_SIGE_ENABLED: bool = False
     FEATURE_EVOLUTION_ALERTS: bool = False
@@ -36,7 +45,7 @@ class Settings(BaseSettings):
     RENATO_WHATSAPP: str = "5544999413366"
 
     STAGE: str = "demo"  # demo | staging | prod
-    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:8765,https://manutencao.demos.napel.com.br"
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:8765,https://manutencao.demos.napel.com.br,https://clavis.napel.com.br,https://staging.clavis.napel.com.br"
     UPLOAD_DIR: str = "/app/data/uploads"
     MAX_UPLOAD_MB_FOTO: int = 5
     MAX_UPLOAD_MB_DOC: int = 20

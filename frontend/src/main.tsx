@@ -4,8 +4,13 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 import { AuthProvider } from './auth/AuthContext'
+import { bootstrapSSO } from './auth/ssoBootstrap'
 import { FilialProvider } from './context/FilialContext'
 import './index.css'
+
+// SSO com Clavis: captura JWT do hash e escuta postMessage. Precisa rodar
+// ANTES do AuthProvider pra o carregamento do usuário ver o token novo.
+bootstrapSSO()
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -50,7 +50,29 @@ def create_access_token(user_id: int, role: str, filial_id: Optional[int], email
 
 
 def decode_token(token: str) -> dict:
-    return jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+    """Decode dual-mode:
+
+    1) Se `CLAVIS_JWT_SECRET` estiver setado, tenta validar como token do Clavis
+       (SSO no piloto — Opção D). Payload esperado: `sub`, `email`, `name`, `role`.
+       Se válido, marca `_source="clavis"` pra o get_current_user decidir se auto-provisiona.
+    2) Fallback: valida como token próprio deste backend (auth local).
+
+    Nunca emite tokens usando o secret do Clavis — só valida. Isso mantém a
+    regra de "nunca sintetizar JWT com signing secret lido da infra".
+    """
+    if settings.CLAVIS_JWT_SECRET:
+        try:
+            payload = jwt.decode(
+                token, settings.CLAVIS_JWT_SECRET,
+                algorithms=[settings.JWT_ALGORITHM],
+            )
+            payload["_source"] = "clavis"
+            return payload
+        except jwt.JWTError:
+            pass  # cai no local
+    payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+    payload["_source"] = "local"
+    return payload
 
 
 def blacklist_jti(jti: str, ttl_seconds: Optional[int] = None) -> None:
