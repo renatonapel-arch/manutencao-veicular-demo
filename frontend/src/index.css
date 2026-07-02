@@ -191,6 +191,22 @@ body {
   box-sizing: border-box; z-index: 1;
 }
 
+/* Timeline row (Ficha do veículo) — ícone quadrado à esquerda, conteúdo, valor à direita */
+.tl > .tl-row + .tl-row { margin-top: 12px; }
+.tl-row {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px; border-radius: 12px;
+  transition: background-color .15s ease;
+}
+.tl-row:hover { background: #F8FBFD; }
+.tl-icon {
+  width: 32px; height: 32px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+/* Some o pseudo-elemento vertical global quando essa lista tem rows sem dots */
+.tl:has(.tl-row)::before { display: none; }
+
 /* Empty state */
 .empty { padding: 3rem 2rem; text-align: center; color: #93a7b6; }
 .empty svg { width: 44px; height: 44px; margin: 0 auto 1rem; opacity: .5; }
