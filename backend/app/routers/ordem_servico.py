@@ -170,8 +170,15 @@ async def list_os(
         )
         membro = (await db.execute(membro_stmt)).scalars().first()
         if membro:
-            if membro.papel == "motorista" and membro.funcionario_id:
-                base = base.where(OrdemServico.funcionario_relator_id == membro.funcionario_id)
+            if membro.papel == "motorista":
+                # Motorista vê SÓ OS que ele mesmo abriu OU relatou como funcionário.
+                # Sem esse OR-fallback ele veria tudo da filial (funcionario_id
+                # frequentemente é NULL nos seeds e no provisionamento inicial).
+                from sqlalchemy import or_
+                conds = [OrdemServico.aberto_por_user_id == user.id]
+                if membro.funcionario_id:
+                    conds.append(OrdemServico.funcionario_relator_id == membro.funcionario_id)
+                base = base.where(or_(*conds))
             elif membro.papel == "mecanico_interno":
                 base = base.where(OrdemServico.tipo_destino == "mecanico_interno")
     if status:

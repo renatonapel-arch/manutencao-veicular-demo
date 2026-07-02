@@ -115,9 +115,11 @@ async def criar_checklist(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    # Idempotência
+    # Idempotência — carrega com veiculo eager pra _to_out não fazer lazy-load
     existente = (await db.execute(
-        select(ChecklistVeiculo).where(ChecklistVeiculo.request_id == payload.request_id)
+        select(ChecklistVeiculo)
+        .options(selectinload(ChecklistVeiculo.veiculo))
+        .where(ChecklistVeiculo.request_id == payload.request_id)
     )).scalar_one_or_none()
     if existente:
         return await _to_out(db, existente)
@@ -187,7 +189,8 @@ async def criar_checklist(
 
     ck.os_geradas = ids_geradas
     await db.commit()
-    await db.refresh(ck)
+    # Refresh eager pra evitar lazy load no _to_out
+    await db.refresh(ck, ["veiculo"])
     return await _to_out(db, ck)
 
 

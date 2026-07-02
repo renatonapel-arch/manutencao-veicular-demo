@@ -195,13 +195,37 @@ async def notify_os_transition(
         msg = render(evento, os, destinatario=u)
         tag = f"manutencao:{evento}:{os.id}:{u.id}"
 
+        # Registra em AlertaHistory pra a tela /alertas mostrar
+        alerta = AlertaHistory(
+            os_id=os.id, veiculo_id=os.veiculo_id, filial_id=os.filial_id,
+            tipo_alerta=evento, telefone=tel or "?",
+            template_name=f"transicao:{evento}", mensagem=msg,
+            status="pending", retry_count=0, enviado_por=u.id,
+        )
+        db.add(alerta)
+
         if not settings.EVOLUTION_ENABLED:
+            alerta.status = "sent"  # mock
+            alerta.sent_at = datetime.utcnow()
             log.info("MOCK Zap · tag=%s · para=%s · %s", tag, u.email, msg.split(chr(10))[0])
             continue
 
         r = _enviar_via_notifier(tel, msg, tag)
         if r.get("sent"):
             enviados += 1
+            alerta.status = "sent"
+            alerta.sent_at = datetime.utcnow()
+        else:
+            alerta.status = "failed"
+            alerta.error_msg = (r.get("error") or "?")[:500]
+
+    # Commit da persistencia dos alertas — service.py ja fez commit da OS antes de chamar
+    try:
+        await db.commit()
+    except Exception as exc:
+        log.warning("commit alertas falhou: %s", exc)
+        await db.rollback()
+
     return {"sent": enviados, "destinatarios": len(dest), "evento": evento}
 
 

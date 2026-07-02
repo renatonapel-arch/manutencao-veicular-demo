@@ -14,12 +14,24 @@ _SUFIXOS = [
 ]
 
 _ALIASES = {
+    # Boldor e variações fonéticas comuns em digitação
     "BOOLDOOR": "BOLDOR",
     "BOOLDOR": "BOLDOR",
     "BOLDOOR": "BOLDOR",
+    "BOUDOR": "BOLDOR",
+    "BUDOR": "BOLDOR",
+    "BOLDOOR": "BOLDOR",
+    "BOULDOR": "BOLDOR",
+    # Águia e variações
+    "AGUI": "AGUIA",
+    "AQUI": "AGUIA",
+    "AQUIA": "AGUIA",
+    # G E C
     "GEC": "G E C",
     "GC": "G E C",
     "GUAREZI": "GUAREZI",
+    # Dida e variações
+    "DIDDA": "DIDA",
 }
 
 
