@@ -20,7 +20,7 @@ function uuid4(): string {
   })
 }
 
-const PASSOS = ['Veículo', 'Oficina', 'Itens', 'Anexos', 'Revisar']
+const PASSOS = ['Veículo', 'Oficina', 'Itens', 'Revisar']
 
 export default function MobileNovaOSPage() {
   const nav = useNavigate()
@@ -241,27 +241,8 @@ export default function MobileNovaOSPage() {
           </>
         )}
 
-        {/* Passo 3 — anexos (placeholder) */}
+        {/* Passo 3 — revisar */}
         {passo === 3 && (
-          <>
-            <div className="text-[11px] uppercase tracking-wider text-ink-500 font-medium">Anexos</div>
-            <div className="bg-warn-bg border border-warn rounded-lg p-3 text-[12px] text-warn-fg">
-              ⚠️ Anexos (foto + NF) só podem ser enviados <b>depois</b> que a OS for criada.
-              Aqui você revisa os dados e cria como rascunho — a próxima tela vai pedir foto + NF.
-            </div>
-            <div className="bg-white border border-border rounded-lg p-3">
-              <div className="text-sm font-medium mb-2">📷 Foto do hodômetro</div>
-              <div className="text-xs text-ink-500">Pelo menos 1 foto obrigatória pra encerrar a OS.</div>
-            </div>
-            <div className="bg-white border border-border rounded-lg p-3">
-              <div className="text-sm font-medium mb-2">📄 NF da oficina</div>
-              <div className="text-xs text-ink-500">Obrigatória pra encerrar — backend bloqueia HTTP 400 sem NF anexada.</div>
-            </div>
-          </>
-        )}
-
-        {/* Passo 4 — revisar */}
-        {passo === 4 && (
           <>
             <div className="text-[11px] uppercase tracking-wider text-ink-500 font-medium">Confirmar criação</div>
             <div className="bg-white border border-border rounded-lg divide-y divide-border">
