@@ -27,16 +27,26 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // SW novo assume controle IMEDIATO das abas abertas em vez de esperar
+        // todas fecharem. Sem isso, um SW antigo (ex: cacheando /api errado)
+        // podia sobreviver dias em quem deixa a aba do Clavis sempre aberta.
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // NetworkOnly pra tudo em /api — NUNCA cachear.
+        //
+        // Motivo crítico: o Workbox usa a URL como chave de cache por padrão,
+        // SEM considerar o header Authorization. Com SSO (Opção D), o mesmo
+        // browser/dispositivo pode servir usuários DIFERENTES na mesma sessão
+        // (ex.: Renato entra, sai, Hudson entra no mesmo Chrome). Um NetworkFirst
+        // com cache fazia `/api/auth/me` cacheado por um usuário vazar pro
+        // próximo que acessasse a mesma URL — apareceu "Olá, Hudson" com token
+        // do Renato. Dado que TODO endpoint de auth é RBAC-sensível por usuário,
+        // a única opção segura é não cachear nada de /api.
         runtimeCaching: [
           {
             urlPattern: /\/api\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 5 },
-            },
+            handler: 'NetworkOnly',
           },
         ],
       },
