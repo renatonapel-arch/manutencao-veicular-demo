@@ -16,7 +16,6 @@ import PlanosPage from './pages/PlanosPage'
 import OficinasPage from './pages/OficinasPage'
 import AlertasPage from './pages/AlertasPage'
 import TimelineVeiculoPage from './pages/TimelineVeiculoPage'
-import MobilePage from './pages/MobilePage'
 import AprovacoesPage from './pages/AprovacoesPage'
 import FrotaPage from './pages/FrotaPage'
 import ChecklistsPage from './pages/ChecklistsPage'
@@ -90,7 +89,6 @@ export default function App() {
         <Route path="checklists"       element={<ChecklistsPage />} />
         <Route path="checklist/novo"   element={<MobileNovoChecklistPage />} />
         <Route path="veiculo/:placa"   element={<TimelineVeiculoPage />} />
-        <Route path="mobile"           element={<MobilePage />} />
 
         {/* Só mobile */}
         <Route path="perfil"           element={isMobile ? <MobilePerfilPage /> : <Navigate to="/dashboard" replace />} />

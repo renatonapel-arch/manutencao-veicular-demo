@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { fmtDataHora, FilialChip } from '../components/Badges'
 import { DataTable } from '../components/DataTable'
-import { Icon } from '../components/Icons'
 import { useFilial } from '../context/FilialContext'
 
 /** Lista de checklists mensais (V2). */
@@ -27,10 +26,6 @@ export default function ChecklistsPage() {
           <div className="display text-lg font-bold text-navy-900">Checklists mensais</div>
           <div className="text-xs text-ink-500">{data?.total ?? '—'} registrados</div>
         </div>
-        <div className="flex-1" />
-        <Link to="/mobile" className="btn btn-outline text-xs">
-          <Icon name="phone" size={12} /> Preview mobile
-        </Link>
       </div>
 
       <div className="card overflow-hidden">

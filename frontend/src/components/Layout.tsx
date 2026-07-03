@@ -47,10 +47,6 @@ function useNav(): NavGroup[] {
       group: 'Comunicação',
       items: [{ to: '/alertas', label: 'Alertas', icon: 'bell' }],
     },
-    {
-      group: 'Dev',
-      items: [{ to: '/mobile', label: 'Preview mobile', icon: 'phone' }],
-    },
   ]
 }
 
@@ -65,7 +61,6 @@ const TITULOS: Record<string, [string, string]> = {
   '/oficinas': ['Cadastros › Oficinas', 'Catálogo de oficinas'],
   '/frota': ['Cadastros › Frota', 'Frota (somente leitura)'],
   '/alertas': ['Comunicação › Alertas', 'Alertas'],
-  '/mobile': ['Dev › Preview', 'PWA do motorista'],
 }
 
 function tituloDa(pathname: string): [string, string] {

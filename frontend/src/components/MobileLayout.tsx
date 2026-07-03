@@ -11,13 +11,17 @@ const NAV: { to: string; icon: IconName; label: string; primary?: boolean }[] = 
 ]
 
 const titulos: Record<string, string> = {
-  '/dashboard': 'Minha frota',
-  '/os':        'Ordens de Serviço',
-  '/os/nova':   'Nova OS',
-  '/planos':    'Preventivas',
-  '/oficinas':  'Oficinas',
-  '/alertas':   'Alertas',
-  '/perfil':    'Perfil',
+  '/dashboard':      'Minha frota',
+  '/os':             'Ordens de Serviço',
+  '/os/nova':        'Nova OS',
+  '/planos':         'Preventivas',
+  '/oficinas':       'Oficinas',
+  '/alertas':        'Alertas',
+  '/perfil':         'Perfil',
+  '/checklist/novo': 'Novo checklist',
+  '/checklists':     'Checklists',
+  '/frota':          'Frota',
+  '/aprovacoes':     'Aprovações',
 }
 
 export default function MobileLayout() {
