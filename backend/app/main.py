@@ -57,8 +57,8 @@ app.add_middleware(
 
 # ---------- Routers ----------
 from .routers import (admin, alertas, auth_routes, checklist, dashboard, health,
-                      oficinas, ordem_servico, planos, timeline, upload,
-                      veiculos)
+                      integracao_rh, oficinas, ordem_servico, planos, timeline,
+                      upload, veiculos)
 
 API = "/api"
 app.include_router(health.router, prefix=API)
@@ -72,6 +72,7 @@ app.include_router(dashboard.router, prefix=API)
 app.include_router(alertas.router, prefix=API)
 app.include_router(upload.router, prefix=API)
 app.include_router(checklist.router, prefix=API)
+app.include_router(integracao_rh.router, prefix=API)
 app.include_router(admin.router, prefix=API)
 
 
