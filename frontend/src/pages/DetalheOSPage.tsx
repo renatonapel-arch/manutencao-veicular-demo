@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
 
@@ -18,16 +18,23 @@ const TRANSICOES_ACAO: { de: string; acao: string; label: string; cor: string; p
   { de: 'em_execucao',           acao: 'encerrar',             label: '🔒 Encerrar',         cor: 'btn-ok' },
 ]
 
+const NOVO_ITEM_VAZIO = { tipo_item: 'peca', descricao: '', quantidade: 1, valor_unitario: 0 }
+
 export default function DetalheOSPage() {
   const { id } = useParams()
-  const nav = useNavigate()
   const qc = useQueryClient()
   const [modalAlerta, setModalAlerta] = useState(false)
   const [tipoAlerta, setTipoAlerta] = useState('manual')
+  const [novoItem, setNovoItem] = useState<any>(NOVO_ITEM_VAZIO)
 
   const { data: os, isLoading } = useQuery({
     queryKey: ['os', id],
     queryFn: () => api.get(`/ordem-servico/${id}`).then(r => r.data),
+  })
+
+  const { data: oficinas } = useQuery({
+    queryKey: ['oficinas-form'],
+    queryFn: () => api.get('/oficinas').then(r => r.data),
   })
 
   const patchMut = useMutation({
@@ -54,6 +61,21 @@ export default function DetalheOSPage() {
     }
     transicaoMut.mutate({ acao, motivo })
   }
+
+  const addItemMut = useMutation({
+    mutationFn: (item: any) => api.post(`/ordem-servico/${id}/itens`, item).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries()
+      setNovoItem(NOVO_ITEM_VAZIO)
+    },
+    onError: (e: any) => alert(e.response?.data?.detail || 'Erro ao adicionar item'),
+  })
+
+  const delItemMut = useMutation({
+    mutationFn: (itemId: number) => api.delete(`/ordem-servico/${id}/itens/${itemId}`).then(r => r.data),
+    onSuccess: () => qc.invalidateQueries(),
+    onError: (e: any) => alert(e.response?.data?.detail || 'Erro ao remover item'),
+  })
 
   const uploadMut = useMutation({
     mutationFn: ({ tipo, file }: { tipo: string, file: File }) => {
@@ -88,6 +110,9 @@ export default function DetalheOSPage() {
   const podeEncerrar = temNF && temFoto && (os.itens || []).length > 0
 
   const acoesDisponiveis = TRANSICOES_ACAO.filter(t => t.de === os.status)
+  // Negociação (oficina + itens) fica travada depois que a OS fecha o ciclo.
+  const podeNegociar = !['encerrada', 'cancelada'].includes(os.status)
+  const podeAdicionarItem = novoItem.descricao && novoItem.valor_unitario > 0
 
   return (
     <section>
@@ -154,10 +179,6 @@ export default function DetalheOSPage() {
                 <label className="text-[11px] text-ink-500">KM lido</label>
                 <div className="px-2 py-1.5 border border-border-strong rounded bg-warn-bg font-mono font-medium">{os.km_veiculo.toLocaleString('pt-BR')}</div>
               </div>
-              <div className="col-span-2">
-                <label className="text-[11px] text-ink-500">Oficina</label>
-                <div className="px-2 py-1.5 border border-border-strong rounded bg-white font-medium">{os.oficina?.nome || '—'}</div>
-              </div>
             </div>
           </div>
 
@@ -167,9 +188,31 @@ export default function DetalheOSPage() {
             <div className="text-[13px]">{os.descricao_problema || '—'}</div>
           </div>
 
+          {/* Oficina — negociação do gestor, separada da abertura (pedido Hudson #0145) */}
+          <div className="card p-5">
+            <div className="kpi-label mb-3">3 · Oficina</div>
+            {podeNegociar ? (
+              <select
+                value={os.oficina_id || ''}
+                onChange={(e) => patchMut.mutate({ oficina_id: e.target.value ? Number(e.target.value) : null })}
+                className="w-full px-2 py-1.5 border border-border-strong rounded bg-white text-[13px]"
+                disabled={patchMut.isPending}
+              >
+                <option value="">— escolher oficina —</option>
+                {(oficinas || []).map((o: any) => (
+                  <option key={o.id} value={o.id}>
+                    {o.nome} ({o.cidade}/{o.uf}) · ★ {o.avaliacao || '—'}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="px-2 py-1.5 border border-border-strong rounded bg-ink-50 font-medium text-[13px]">{os.oficina?.nome || '—'}</div>
+            )}
+          </div>
+
           {/* Itens */}
           <div className="card p-5">
-            <div className="kpi-label mb-3">3 · Itens</div>
+            <div className="kpi-label mb-3">4 · Itens</div>
             <table className="w-full text-[12px] dense">
               <thead className="bg-ink-50 text-ink-500 border-y border-border">
                 <tr>
@@ -178,6 +221,7 @@ export default function DetalheOSPage() {
                   <th className="text-right">Qtd</th>
                   <th className="text-right">Valor</th>
                   <th className="text-right">Subtotal</th>
+                  {podeNegociar && <th className="w-8"></th>}
                 </tr>
               </thead>
               <tbody>
@@ -188,21 +232,90 @@ export default function DetalheOSPage() {
                     <td className="text-right font-mono">{Number(it.quantidade).toLocaleString('pt-BR')}</td>
                     <td className="text-right font-mono">{fmtBRL(it.valor_unitario)}</td>
                     <td className="text-right font-medium font-mono">{fmtBRL(it.subtotal)}</td>
+                    {podeNegociar && (
+                      <td className="text-center">
+                        <button
+                          onClick={() => delItemMut.mutate(it.id)}
+                          disabled={delItemMut.isPending}
+                          className="text-danger hover:text-danger-fg"
+                        >
+                          🗑
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
+                {!(os.itens || []).length && (
+                  <tr><td colSpan={podeNegociar ? 6 : 5} className="text-center text-ink-400 py-3">Nenhum item lançado ainda</td></tr>
+                )}
               </tbody>
               <tfoot className="border-t-2 border-border-strong">
                 <tr className="font-semibold bg-ink-50">
                   <td colSpan={4} className="text-right pr-2">Total</td>
                   <td className="text-right text-base font-mono text-naval">{fmtBRL(os.valor_total)}</td>
+                  {podeNegociar && <td></td>}
                 </tr>
               </tfoot>
             </table>
+
+            {podeNegociar && (
+              <div className="flex gap-2 items-end mt-3 pt-3 border-t border-border">
+                <div className="w-24">
+                  <label className="text-[11px] text-ink-500">Tipo</label>
+                  <select
+                    value={novoItem.tipo_item}
+                    onChange={(e) => setNovoItem({ ...novoItem, tipo_item: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-border rounded bg-white text-[11px]"
+                  >
+                    <option value="peca">Peça</option>
+                    <option value="servico">Serviço</option>
+                    <option value="ajuste">Ajuste</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="text-[11px] text-ink-500">Descrição</label>
+                  <input
+                    type="text"
+                    value={novoItem.descricao}
+                    onChange={(e) => setNovoItem({ ...novoItem, descricao: e.target.value })}
+                    placeholder="Ex: Junta cabeçote / Mão de obra"
+                    className="w-full px-2 py-1.5 border border-border rounded"
+                  />
+                </div>
+                <div className="w-20">
+                  <label className="text-[11px] text-ink-500">Qtd</label>
+                  <input
+                    type="number"
+                    value={novoItem.quantidade}
+                    onChange={(e) => setNovoItem({ ...novoItem, quantidade: Number(e.target.value) })}
+                    className="w-full px-2 py-1.5 border border-border rounded font-mono text-right"
+                    step="0.01"
+                  />
+                </div>
+                <div className="w-28">
+                  <label className="text-[11px] text-ink-500">Valor unit.</label>
+                  <input
+                    type="number"
+                    value={novoItem.valor_unitario}
+                    onChange={(e) => setNovoItem({ ...novoItem, valor_unitario: Number(e.target.value) })}
+                    className="w-full px-2 py-1.5 border border-border rounded font-mono text-right"
+                    step="0.01"
+                  />
+                </div>
+                <button
+                  onClick={() => addItemMut.mutate(novoItem)}
+                  disabled={!podeAdicionarItem || addItemMut.isPending}
+                  className={`px-3 py-1.5 rounded text-sm font-medium text-white ${podeAdicionarItem && !addItemMut.isPending ? 'bg-naval hover:bg-noite' : 'bg-ink-300 cursor-not-allowed'}`}
+                >
+                  + Adicionar
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Anexos */}
           <div className="card p-5">
-            <div className="kpi-label mb-3">4 · Anexos</div>
+            <div className="kpi-label mb-3">5 · Anexos</div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <div className="text-[11px] font-medium mb-1.5">📷 Fotos <span className={temFoto ? 'text-success-fg' : 'text-ink-400'}>({(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).length})</span></div>
