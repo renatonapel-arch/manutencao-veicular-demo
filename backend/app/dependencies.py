@@ -18,16 +18,34 @@ from .config import settings
 from .database import get_db
 from .models import MembroManutencao, User
 
-# Mapa role Clavis -> role deste módulo
-# admin do Clavis (Renato/Hudson) -> admin do módulo
-# gerente do Clavis (Cesar operacional) -> aprovador
-# demais -> usuario (acesso restrito à própria filial via papel do módulo)
+# Mapa role Clavis -> role deste módulo (User.role local)
 CLAVIS_ROLE_MAP = {
     "admin":      "admin",
     "gerente":    "aprovador",
     "financeiro": "aprovador",
     "operador":   "usuario",
     "vendedor":   "usuario",
+}
+
+# Mapa role Clavis -> papel dentro do módulo (MembroManutencao.papel).
+# ATENÇÃO: "aprovador" NÃO é um valor aceito aqui (CHECK constraint só
+# permite admin/filial_responsavel/motorista/mecanico_interno/admin_oficinas/
+# financeiro — ver PAPEL_MEMBRO_VALORES em models.py). O código antigo
+# gravava "aprovador" e quebraria (500) no primeiro usuário não-admin a
+# logar; só não deu erro até agora porque só admins tinham acesso.
+#
+# Quem de fato aprova orçamento é decidido por User.role em
+# service.autorizar_transicao ("admin"/"aprovador" passam direto, ANTES de
+# olhar este papel) — então gerente/financeiro do Clavis já têm poder total
+# via CLAVIS_ROLE_MAP acima; o papel aqui só precisa ser um valor válido.
+# Liberação geral (#0145): vendedor/operador (entregador) vira "motorista"
+# — só abre OS e vê as próprias, nunca aprova nada.
+CLAVIS_PAPEL_MODULO_MAP = {
+    "admin":      "admin",
+    "gerente":    "filial_responsavel",
+    "financeiro": "filial_responsavel",
+    "operador":   "motorista",
+    "vendedor":   "motorista",
 }
 
 
@@ -77,11 +95,14 @@ async def _provision_from_clavis(db: AsyncSession, payload: dict) -> User:
     )
     db.add(user)
     await db.flush()
-    # Membro admin global — dá acesso a todas as filiais no piloto.
-    # Depois do piloto, o admin ajusta papel/filial via /admin.
+    # filial_id=0 = "todas" — o JWT do Clavis não carrega a filial do
+    # usuário, então não dá pra restringir aqui. Pra "motorista" isso não é
+    # brecha: autorizar_transicao já trava por os.funcionario_relator_id
+    # (só mexe na própria OS), com ou sem filial. Ajuste fino de
+    # papel/filial fica pro admin em /admin depois do primeiro login.
     db.add(MembroManutencao(
         user_id=user.id, filial_id=0,
-        papel="admin" if role_local == "admin" else "aprovador",
+        papel=CLAVIS_PAPEL_MODULO_MAP.get(role_clavis, "motorista"),
         funcionario_id=None, ativo=True,
     ))
     await db.commit()
