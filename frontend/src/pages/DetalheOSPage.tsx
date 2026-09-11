@@ -321,7 +321,10 @@ export default function DetalheOSPage() {
                 <div className="text-[11px] font-medium mb-1.5">📷 Fotos <span className={temFoto ? 'text-success-fg' : 'text-ink-400'}>({(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).length})</span></div>
                 <div className="grid grid-cols-3 gap-1.5">
                   {(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).map((a: any) => (
-                    <div key={a.id} className="aspect-square bg-ink-200 rounded border flex items-center justify-center text-3xl">📷</div>
+                    <a key={a.id} href={a.arquivo_url} target="_blank" rel="noreferrer"
+                       className="aspect-square rounded border border-border overflow-hidden block hover:opacity-80">
+                      <img src={a.arquivo_url} alt="Foto anexada" className="w-full h-full object-cover" />
+                    </a>
                   ))}
                   <label className="aspect-square border-2 border-dashed border-border-strong rounded flex flex-col items-center justify-center text-ink-500 text-[10px] cursor-pointer hover:bg-gelo">
                     <span className="text-2xl">+</span>Foto
@@ -332,10 +335,20 @@ export default function DetalheOSPage() {
               </div>
               <div>
                 <div className="text-[11px] font-medium mb-1.5">📄 NF <span className={temNF ? 'text-success-fg' : 'text-danger-fg'}>{temNF ? '✓' : '(obrigatória)'}</span></div>
-                <label className={`aspect-[3/1] w-full border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer ${temNF ? 'border-success bg-success-bg/30' : 'border-danger bg-danger-bg/20'}`}>
-                  <span className="text-3xl">📄</span>
-                  <span className="font-medium text-sm mt-1">{temNF ? 'NF anexada' : 'Anexar NF'}</span>
-                  <span className="text-[9px] text-ink-400">PDF · JPG · ≤20MB</span>
+                {temNF && (
+                  <a
+                    href={(os.anexos || []).find((a: any) => a.tipo === 'nf')?.arquivo_url}
+                    target="_blank" rel="noreferrer"
+                    className="aspect-[3/1] w-full border-2 rounded flex flex-col items-center justify-center border-success bg-success-bg/30 hover:bg-success-bg/50 mb-1.5"
+                  >
+                    <span className="text-3xl">📄</span>
+                    <span className="font-medium text-sm mt-1">Ver NF anexada</span>
+                  </a>
+                )}
+                <label className={`${temNF ? 'py-1.5' : 'aspect-[3/1]'} w-full border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer ${temNF ? 'border-border text-ink-500 text-xs' : 'border-danger bg-danger-bg/20'}`}>
+                  {!temNF && <span className="text-3xl">📄</span>}
+                  <span className={`font-medium mt-1 ${temNF ? 'text-xs' : 'text-sm'}`}>{temNF ? 'Substituir NF' : 'Anexar NF'}</span>
+                  {!temNF && <span className="text-[9px] text-ink-400">PDF · JPG · ≤20MB</span>}
                   <input type="file" accept="image/*,application/pdf" className="hidden"
                          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMut.mutate({ tipo: 'nf', file: f }) }}/>
                 </label>

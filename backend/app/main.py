@@ -75,6 +75,16 @@ app.include_router(checklist.router, prefix=API)
 app.include_router(integracao_rh.router, prefix=API)
 app.include_router(admin.router, prefix=API)
 
+# ---------- Uploads (fotos/NF anexadas às OS) ----------
+# Faltava — os anexos eram salvos no disco (settings.UPLOAD_DIR) e o banco
+# gravava arquivo_url=/uploads/{path}, mas essa rota nunca foi exposta.
+# Pedir a foto de volta caía no fallback SPA (devolvia o HTML do app inteiro
+# em vez da imagem) — por isso ninguém nunca conseguiu abrir uma foto
+# anexada, em nenhuma tela (#0150).
+UPLOAD_DIR = Path(settings.UPLOAD_DIR)
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+
 
 # ---------- Frontend estático (build do Vite) ----------
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend_dist"
