@@ -13,7 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
-from ..dependencies import get_current_user
+from ..dependencies import escopo_filial, get_current_user
 from ..models import (
     AnexosOs, OficinaPadronizada, OrdemServico, User, VeiculoSnapshot,
 )
@@ -33,8 +33,9 @@ def _escopo(user: User, filial_id: Optional[int]) -> list:
         OrdemServico.deleted_at.is_(None),
         OrdemServico.status != "rascunho",
     ]
-    if user.role not in ("admin", "aprovador"):
-        conds.append(OrdemServico.filial_id == user.filial_id)
+    restricao = escopo_filial(user)
+    if restricao is not None:
+        conds.append(OrdemServico.filial_id == restricao)
     elif filial_id:
         conds.append(OrdemServico.filial_id == filial_id)
     return conds
@@ -113,8 +114,9 @@ async def dashboard(
         veic_stmt = select(func.coalesce(func.sum(VeiculoSnapshot.km_atual), 0)).where(
             VeiculoSnapshot.ativo.is_(True)
         )
-        if user.role != "admin":
-            veic_stmt = veic_stmt.where(VeiculoSnapshot.filial_id == user.filial_id)
+        restricao_km = escopo_filial(user)
+        if restricao_km is not None:
+            veic_stmt = veic_stmt.where(VeiculoSnapshot.filial_id == restricao_km)
         elif filial_id:
             veic_stmt = veic_stmt.where(VeiculoSnapshot.filial_id == filial_id)
         km_frota_total = int((await db.execute(veic_stmt)).scalar_one() or 0)

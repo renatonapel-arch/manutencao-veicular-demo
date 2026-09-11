@@ -145,19 +145,35 @@ def require_role(roles: List[str]) -> Callable:
     return _dep
 
 
-def check_filial_access(user: User, filial_id: Optional[int]) -> bool:
-    """Roles globais (admin/aprovador) veem tudo; demais só a própria filial.
+def escopo_filial(user: User) -> Optional[int]:
+    """Filial que deve restringir as queries deste usuário. `None` = sem
+    restrição (vê todas as filiais).
 
-    - admin: total no Clavis (todos módulos).
-    - aprovador: role dedicada a quem aprova compras/OS entre filiais — não é
-      restringido por filial de origem. Sem isso, Cesar tomava 403 e o papel
-      ficava inutilizado.
+    Dois casos viram `None` por motivos diferentes:
+    - admin/aprovador: role global, sempre vê tudo.
+    - usuário comum com `filial_id is None`: ainda não tem filial atribuída
+      (típico de quem acabou de entrar via SSO do Clavis — o JWT não carrega
+      filial). Filtrar por `filial_id == None` nunca bate com nenhuma linha
+      real e deixa a pessoa sem ver absolutamente nada (veículos, OS,
+      dashboard, checklist) — foi a causa do #0148 (Jairo/Bruno com o
+      dropdown de veículo vazio no primeiro acesso). Até o admin configurar
+      a filial em /admin, o usuário vê tudo, igual um admin veria.
     """
     if user.role in ("admin", "aprovador"):
+        return None
+    return user.filial_id
+
+
+def check_filial_access(user: User, filial_id: Optional[int]) -> bool:
+    """Roles globais (admin/aprovador) veem tudo; demais só a própria filial
+    — mas só depois que a filial deles estiver configurada (ver escopo_filial).
+    """
+    restricao = escopo_filial(user)
+    if restricao is None:
         return True
     if filial_id is None:
         return False
-    return user.filial_id == filial_id
+    return restricao == filial_id
 
 
 def enforce_filial_access(user: User, filial_id: int) -> None:

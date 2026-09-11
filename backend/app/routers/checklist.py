@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..database import get_db
-from ..dependencies import check_filial_access, get_current_user
+from ..dependencies import check_filial_access, escopo_filial, get_current_user
 from ..integrations.evolution_whatsapp import notify_os_transition
 from ..models import (
     AnexosChecklist, ChecklistVeiculo, OrdemServico, User, VeiculoSnapshot,
@@ -204,8 +204,9 @@ async def listar_checklists(
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(ChecklistVeiculo).where(ChecklistVeiculo.deleted_at.is_(None))
-    if user.role not in ("admin", "aprovador"):
-        stmt = stmt.where(ChecklistVeiculo.filial_id == user.filial_id)
+    restricao = escopo_filial(user)
+    if restricao is not None:
+        stmt = stmt.where(ChecklistVeiculo.filial_id == restricao)
     elif filial_id:
         stmt = stmt.where(ChecklistVeiculo.filial_id == filial_id)
     if veiculo_id:

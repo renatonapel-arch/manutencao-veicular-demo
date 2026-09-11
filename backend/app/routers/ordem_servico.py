@@ -15,7 +15,7 @@ from sqlalchemy.orm import selectinload
 
 from .. import service as svc
 from ..database import get_db
-from ..dependencies import check_filial_access, get_current_user
+from ..dependencies import check_filial_access, escopo_filial, get_current_user
 from ..models import (
     AuditoriaOs, IdempotencyKey, OrdemServico, OsItemLinha, User, VeiculoSnapshot,
 )
@@ -151,13 +151,16 @@ async def list_os(
     base = select(OrdemServico).where(OrdemServico.deleted_at.is_(None))
 
     # Roles globais (admin/aprovador) veem tudo (com filtro opcional de filial).
-    # Demais são restritos pela filial do próprio user.
-    if user.role in ("admin", "aprovador"):
-        if filial_id:
-            base = base.where(OrdemServico.filial_id == filial_id)
-    else:
-        base = base.where(OrdemServico.filial_id == user.filial_id)
+    # Demais são restritos pela filial do próprio user — mas só quando ela já
+    # está definida (escopo_filial devolve None pra quem ainda não tem, ver
+    # #0148: sem isso a lista vinha vazia pra todo usuário recém-SSO).
+    restricao = escopo_filial(user)
+    if restricao is not None:
+        base = base.where(OrdemServico.filial_id == restricao)
+    elif filial_id:
+        base = base.where(OrdemServico.filial_id == filial_id)
 
+    if user.role not in ("admin", "aprovador"):
         # Restrições adicionais por papel do módulo:
         #  - motorista só vê OS que ele mesmo relatou
         #  - mecanico_interno só vê OS destinadas a mecânico interno
