@@ -58,3 +58,49 @@ async def test_transicionar_deletada_falha(db, admin_user, veiculo):
     with pytest.raises(HTTPException) as exc:
         await service.transicionar(db, os.id, "em_triagem", admin_user)
     assert exc.value.status_code == 404
+
+
+# ============================================================
+# RBAC — soft_delete_os reaproveita a regra de "cancelada"
+# ============================================================
+
+async def test_responsavel_deleta_os_propria_filial(db, admin_user, responsavel_user, veiculo):
+    os = await make_os(db, admin_user, veiculo, status="aberta")
+    await service.soft_delete_os(db, os.id, responsavel_user)
+
+    await db.refresh(os)
+    assert os.deleted_at is not None
+
+
+async def test_motorista_deleta_propria_os(db, admin_user, motorista_user, veiculo):
+    os = await make_os(
+        db, admin_user, veiculo, status="rascunho", funcionario_relator_id=300,
+    )
+    await service.soft_delete_os(db, os.id, motorista_user)
+
+    await db.refresh(os)
+    assert os.deleted_at is not None
+
+
+async def test_motorista_bloqueado_deletar_os_de_outro(db, admin_user, motorista_user, veiculo):
+    """Motorista não pode excluir OS relatada por outro funcionário."""
+    os = await make_os(
+        db, admin_user, veiculo, status="rascunho", funcionario_relator_id=999,
+    )
+    with pytest.raises(HTTPException) as exc:
+        await service.soft_delete_os(db, os.id, motorista_user)
+    assert exc.value.status_code == 403
+
+    await db.refresh(os)
+    assert os.deleted_at is None
+
+
+async def test_mecanico_bloqueado_deletar_os(db, admin_user, mecanico_user, veiculo):
+    """Mecânico interno nunca pode excluir OS — 'cancelada' está fora do seu conjunto de transições."""
+    os = await make_os(db, admin_user, veiculo, status="em_execucao")
+    with pytest.raises(HTTPException) as exc:
+        await service.soft_delete_os(db, os.id, mecanico_user)
+    assert exc.value.status_code == 403
+
+    await db.refresh(os)
+    assert os.deleted_at is None

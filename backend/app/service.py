@@ -403,6 +403,7 @@ async def soft_delete_os(
     os = await get_os(db, os_id)
     if os is None:
         raise HTTPException(404, "OS não encontrada")
+    await autorizar_transicao(db, user, os, "cancelada")
     os.deleted_at = datetime.utcnow()
     await _auditar(
         db, os_id, user,
