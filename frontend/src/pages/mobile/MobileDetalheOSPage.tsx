@@ -42,11 +42,23 @@ export default function MobileDetalheOSPage() {
   })
 
   const transicionar = useMutation({
-    mutationFn: (acao: string) =>
-      api.post(`/ordem-servico/${id}/${acao}`).then(r => r.data),
+    mutationFn: ({ acao, motivo }: { acao: string; motivo?: string }) => {
+      const qs = motivo ? `?motivo=${encodeURIComponent(motivo)}` : ''
+      return api.post(`/ordem-servico/${id}/${acao}${qs}`).then(r => r.data)
+    },
     onSuccess: () => qc.invalidateQueries(),
     onError: (e: any) => alert(e.response?.data?.detail || 'Erro na transição'),
   })
+
+  // Mesmo padrão do desktop (DetalheOSPage): motivo obrigatório coletado via prompt.
+  const executarTransicao = (acao: string, precisaMotivo?: boolean) => {
+    let motivo: string | undefined
+    if (precisaMotivo) {
+      motivo = window.prompt('Motivo (obrigatório):') || undefined
+      if (!motivo) return
+    }
+    transicionar.mutate({ acao, motivo })
+  }
 
   const patchMut = useMutation({
     mutationFn: (payload: any) => api.patch(`/ordem-servico/${id}`, payload).then(r => r.data),
@@ -306,19 +318,33 @@ export default function MobileDetalheOSPage() {
 
       {/* Ação principal (só se houver próxima transição válida) */}
       {podeAcao && (
-        <div className="pb-4 space-y-2">
+        <div className="pb-2 space-y-2">
           {bloqueado && (
             <div className="text-xs text-err-fg bg-err-bg border border-err rounded-lg px-3 py-2 text-center">
               {bloqueado}
             </div>
           )}
           <button
-            onClick={() => transicionar.mutate(podeAcao.acao)}
+            onClick={() => executarTransicao(podeAcao.acao)}
             disabled={transicionar.isPending || !!bloqueado}
             className={`w-full py-3 rounded-lg font-semibold active:opacity-90 disabled:opacity-40 ${podeAcao.cor}`}
             style={{ minHeight: 48 }}
           >
             {transicionar.isPending ? 'Enviando…' : podeAcao.label}
+          </button>
+        </div>
+      )}
+
+      {/* Cancelar/negar OS — mesma ação do desktop, precisa motivo (#0160) */}
+      {!['encerrada', 'cancelada'].includes(os.status) && (
+        <div className="pb-4">
+          <button
+            onClick={() => executarTransicao('cancelar', true)}
+            disabled={transicionar.isPending}
+            className="w-full py-3 rounded-lg font-semibold text-err-fg bg-err-bg border border-err active:opacity-90 disabled:opacity-40"
+            style={{ minHeight: 48 }}
+          >
+            Cancelar OS
           </button>
         </div>
       )}
