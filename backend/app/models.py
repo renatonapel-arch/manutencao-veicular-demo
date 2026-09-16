@@ -339,8 +339,13 @@ class PreventivaGerada(Base):
     id = Column(Integer, primary_key=True)
     veiculo_id = Column(Integer, ForeignKey("veiculo_snapshot.id"), nullable=False)
     plano_id = Column(Integer, ForeignKey("plano_preventiva.id"), nullable=False)
-    os_id = Column(Integer, ForeignKey("os_manutencao.id"))
+    os_id = Column(Integer, ForeignKey("os_manutencao.id"))  # NULL = linha-âncora (baseline), sem OS
     ano_mes = Column(String(7), nullable=False)
+    # Km do veículo no momento em que esta preventiva (ou baseline) foi registrada.
+    # É a ÂNCORA do cálculo por km: a próxima só vence em km_referencia + km_intervalo.
+    # Sem esta coluna não dá pra saber "quanto rodou desde a última" (o schema não
+    # guardava isso), então o job por km era impossível de fazer certo — ver gerar_preventivas.
+    km_referencia = Column(Integer)
     data_geracao = Column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (

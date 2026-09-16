@@ -76,6 +76,8 @@ _MIGRATIONS_V3 = [
     "CREATE INDEX IF NOT EXISTS ix_oficina_nome_normalizado ON oficina_padronizada(nome_normalizado)",
     "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS deleted_at timestamptz",
     "CREATE INDEX IF NOT EXISTS ix_os_deleted_at ON os_manutencao(deleted_at)",
+    # 4b) âncora de km da preventiva (necessária pro job por km funcionar)
+    "ALTER TABLE preventiva_gerada ADD COLUMN IF NOT EXISTS km_referencia integer",
     # 5) view de garantia ativa
     """CREATE OR REPLACE VIEW manutencao_garantia_ativa AS
         SELECT i.id AS item_id, o.id AS os_id, o.veiculo_id, o.oficina_id,
