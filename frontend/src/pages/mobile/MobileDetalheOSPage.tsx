@@ -30,6 +30,8 @@ export default function MobileDetalheOSPage() {
   const qc = useQueryClient()
   const [novoItem, setNovoItem] = useState<any>(NOVO_ITEM_VAZIO)
   const [mostrarForm, setMostrarForm] = useState(false)
+  const [motivoModal, setMotivoModal] = useState<string | null>(null)  // ação aguardando motivo
+  const [motivoText, setMotivoText] = useState('')
 
   const { data: os, isLoading } = useQuery({
     queryKey: ['os', id],
@@ -46,18 +48,24 @@ export default function MobileDetalheOSPage() {
       const qs = motivo ? `?motivo=${encodeURIComponent(motivo)}` : ''
       return api.post(`/ordem-servico/${id}/${acao}${qs}`).then(r => r.data)
     },
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: () => {
+      qc.invalidateQueries()
+      setMotivoModal(null)
+      setMotivoText('')
+    },
     onError: (e: any) => alert(e.response?.data?.detail || 'Erro na transição'),
   })
 
-  // Mesmo padrão do desktop (DetalheOSPage): motivo obrigatório coletado via prompt.
+  // Motivo obrigatório é coletado num modal NA PRÓPRIA tela — window.prompt()
+  // é bloqueado pelo navegador dentro do iframe cross-origin do Clavis (o botão
+  // "não fazia nada" — #0169). Idem alert(): erro some, por isso mostro inline.
   const executarTransicao = (acao: string, precisaMotivo?: boolean) => {
-    let motivo: string | undefined
     if (precisaMotivo) {
-      motivo = window.prompt('Motivo (obrigatório):') || undefined
-      if (!motivo) return
+      setMotivoText('')
+      setMotivoModal(acao)
+      return
     }
-    transicionar.mutate({ acao, motivo })
+    transicionar.mutate({ acao })
   }
 
   const patchMut = useMutation({
@@ -346,6 +354,51 @@ export default function MobileDetalheOSPage() {
           >
             Cancelar OS
           </button>
+        </div>
+      )}
+
+      {/* Modal de motivo (na própria tela — prompt() não funciona no iframe) */}
+      {motivoModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3"
+          onClick={() => !transicionar.isPending && setMotivoModal(null)}
+        >
+          <div
+            className="bg-white rounded-xl w-full max-w-md p-4 space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="font-semibold text-navy-900">Cancelar OS #{os.id}</div>
+            <div className="text-[13px] text-ink-500">Informe o motivo (obrigatório):</div>
+            <textarea
+              autoFocus
+              value={motivoText}
+              onChange={(e) => setMotivoText(e.target.value)}
+              rows={3}
+              placeholder="Ex.: feito em garantia, duplicado, não autorizado…"
+              className="w-full px-3 py-2 border border-line rounded-lg text-sm"
+            />
+            {transicionar.isError && (
+              <div className="text-xs text-err-fg bg-err-bg border border-err rounded-lg px-3 py-2">
+                {(transicionar.error as any)?.response?.data?.detail || 'Erro ao cancelar. Tente de novo.'}
+              </div>
+            )}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setMotivoModal(null)}
+                disabled={transicionar.isPending}
+                className="flex-1 border border-line rounded-lg py-2.5 text-sm text-ink-500"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={() => transicionar.mutate({ acao: motivoModal, motivo: motivoText.trim() })}
+                disabled={!motivoText.trim() || transicionar.isPending}
+                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white ${motivoText.trim() && !transicionar.isPending ? 'bg-err-fg' : 'bg-ink-300'}`}
+              >
+                {transicionar.isPending ? 'Cancelando…' : 'Confirmar cancelamento'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>

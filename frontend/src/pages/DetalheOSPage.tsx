@@ -26,6 +26,8 @@ export default function DetalheOSPage() {
   const [modalAlerta, setModalAlerta] = useState(false)
   const [tipoAlerta, setTipoAlerta] = useState('manual')
   const [novoItem, setNovoItem] = useState<any>(NOVO_ITEM_VAZIO)
+  const [motivoModal, setMotivoModal] = useState<string | null>(null)  // ação aguardando motivo
+  const [motivoText, setMotivoText] = useState('')
 
   const { data: os, isLoading } = useQuery({
     queryKey: ['os', id],
@@ -49,17 +51,30 @@ export default function DetalheOSPage() {
       const qs = motivo ? `?motivo=${encodeURIComponent(motivo)}` : ''
       return api.post(`/ordem-servico/${id}/${acao}${qs}`).then(r => r.data)
     },
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: () => {
+      qc.invalidateQueries()
+      setMotivoModal(null)
+      setMotivoText('')
+    },
     onError: (e: any) => alert(e.response?.data?.detail || 'Erro na transição'),
   })
 
+  // Motivo obrigatório vai num modal NA PRÓPRIA tela — window.prompt() é
+  // bloqueado pelo navegador dentro do iframe cross-origin do Clavis, então o
+  // botão "não fazia nada" (#0169). Vale p/ cancelar, reprovar e pedir 2º orç.
   const executarTransicao = (acao: string, precisaMotivo?: boolean) => {
-    let motivo: string | undefined
     if (precisaMotivo) {
-      motivo = window.prompt('Motivo (obrigatório):') || undefined
-      if (!motivo) return
+      setMotivoText('')
+      setMotivoModal(acao)
+      return
     }
-    transicaoMut.mutate({ acao, motivo })
+    transicaoMut.mutate({ acao })
+  }
+
+  const MOTIVO_TITULO: Record<string, string> = {
+    cancelar: 'Cancelar OS',
+    reprovar: 'Reprovar OS',
+    'pedir-2o-orcamento': 'Pedir 2º orçamento',
   }
 
   const addItemMut = useMutation({
@@ -411,6 +426,38 @@ export default function DetalheOSPage() {
             <div className="flex gap-2 justify-end">
               <button onClick={() => setModalAlerta(false)} className="border border-border-strong bg-white px-3 py-1.5 rounded text-sm">Cancelar</button>
               <button onClick={() => dispatchMut.mutate()} className="bg-success text-white px-3 py-1.5 rounded text-sm font-medium">Enviar (mock)</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de motivo (na própria tela — prompt() não funciona no iframe) */}
+      {motivoModal && (
+        <div className="fixed inset-0 bg-noite/50 flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget && !transicaoMut.isPending) setMotivoModal(null) }}>
+          <div className="bg-white rounded-lg max-w-md w-full p-5 space-y-3">
+            <div className="text-lg font-semibold text-naval">{MOTIVO_TITULO[motivoModal] || 'Motivo'} · OS #{os.id}</div>
+            <div className="text-[12px] text-ink-500">Informe o motivo (obrigatório):</div>
+            <textarea
+              autoFocus
+              value={motivoText}
+              onChange={(e) => setMotivoText(e.target.value)}
+              rows={3}
+              placeholder="Ex.: feito em garantia, duplicado, não autorizado…"
+              className="w-full px-2 py-1.5 border border-border-strong rounded text-sm"
+            />
+            {transicaoMut.isError && (
+              <div className="text-xs text-err-fg bg-err-bg border border-err rounded px-3 py-2">
+                {(transicaoMut.error as any)?.response?.data?.detail || 'Erro. Tente de novo.'}
+              </div>
+            )}
+            <div className="flex gap-2 justify-end pt-1">
+              <button onClick={() => setMotivoModal(null)} disabled={transicaoMut.isPending}
+                      className="border border-border-strong bg-white px-3 py-1.5 rounded text-sm">Voltar</button>
+              <button onClick={() => transicaoMut.mutate({ acao: motivoModal, motivo: motivoText.trim() })}
+                      disabled={!motivoText.trim() || transicaoMut.isPending}
+                      className="bg-err-fg text-white px-3 py-1.5 rounded text-sm font-medium disabled:opacity-40">
+                {transicaoMut.isPending ? 'Enviando…' : 'Confirmar'}
+              </button>
             </div>
           </div>
         </div>
