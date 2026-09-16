@@ -189,16 +189,27 @@ async def notify_os_transition(
                     papeis, os.filial_id)
         return {"sent": 0, "skipped": "sem destinatarios"}
 
-    enviados = 0
+    # Dedup por NÚMERO de telefone antes de enviar. Sem isso, N membros sem
+    # telefone caem todos no fallback RENATO_WHATSAPP e o dono recebe N cópias
+    # idênticas do mesmo evento — causa raiz da enxurrada (o "liberar geral"
+    # criou ~25 membros globais sem telefone → 1 OS aberta = 11 zaps iguais).
+    # Chave = número resolvido; 1 mensagem por número, o 1º membro representa.
+    por_telefone: dict[str, User] = {}
     for u in dest:
         tel = _clean_phone(u.telefone) or _clean_phone(settings.RENATO_WHATSAPP)
+        if not tel:
+            continue
+        por_telefone.setdefault(tel, u)
+
+    enviados = 0
+    for tel, u in por_telefone.items():
         msg = render(evento, os, destinatario=u)
-        tag = f"manutencao:{evento}:{os.id}:{u.id}"
+        tag = f"manutencao:{evento}:{os.id}:{tel}"
 
         # Registra em AlertaHistory pra a tela /alertas mostrar
         alerta = AlertaHistory(
             os_id=os.id, veiculo_id=os.veiculo_id, filial_id=os.filial_id,
-            tipo_alerta=evento, telefone=tel or "?",
+            tipo_alerta=evento, telefone=tel,
             template_name=f"transicao:{evento}", mensagem=msg,
             status="pending", retry_count=0, enviado_por=u.id,
         )
@@ -226,7 +237,7 @@ async def notify_os_transition(
         log.warning("commit alertas falhou: %s", exc)
         await db.rollback()
 
-    return {"sent": enviados, "destinatarios": len(dest), "evento": evento}
+    return {"sent": enviados, "destinatarios": len(por_telefone), "evento": evento}
 
 
 # --- Retrocompat com o router de alertas manual ---------------------------
