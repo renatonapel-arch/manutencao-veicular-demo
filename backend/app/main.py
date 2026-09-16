@@ -32,6 +32,11 @@ async def lifespan(app: FastAPI):
         start_scheduler()
     except Exception as e:
         log.warning("Scheduler não iniciou: %s", e)
+    try:
+        from .jobs.sync_veiculos import start_scheduler as start_sync_scheduler
+        start_sync_scheduler()
+    except Exception as e:
+        log.warning("Scheduler de sync (Frota) não iniciou: %s", e)
     yield
     log.info("Shutdown")
 
