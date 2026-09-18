@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { api } from '../../api/client'
+import { useAuth } from '../../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../../components/Badges'
 
 /**
@@ -25,9 +26,15 @@ const PROX_ACOES: Record<string, { acao: string; label: string; cor: string }> =
 
 const NOVO_ITEM_VAZIO = { tipo_item: 'peca', descricao: '', quantidade: 1, valor_unitario: 0 }
 
+const MOTIVO_TITULO: Record<string, string> = {
+  cancelar: 'Cancelar OS',
+  'encerrar-garantia': 'Encerrar em garantia',
+}
+
 export default function MobileDetalheOSPage() {
   const { id } = useParams()
   const qc = useQueryClient()
+  const { user } = useAuth()
   const [novoItem, setNovoItem] = useState<any>(NOVO_ITEM_VAZIO)
   const [mostrarForm, setMostrarForm] = useState(false)
   const [motivoModal, setMotivoModal] = useState<string | null>(null)  // ação aguardando motivo
@@ -343,6 +350,20 @@ export default function MobileDetalheOSPage() {
         </div>
       )}
 
+      {/* Encerrar em garantia (gestor) — fecha sem custo/NF/foto (#0177) */}
+      {['admin', 'aprovador'].includes(user?.role || '') && !['encerrada', 'cancelada'].includes(os.status) && (
+        <div className="pb-2">
+          <button
+            onClick={() => executarTransicao('encerrar-garantia', true)}
+            disabled={transicionar.isPending}
+            className="w-full py-3 rounded-lg font-semibold text-navy-800 bg-white border border-line active:opacity-90 disabled:opacity-40"
+            style={{ minHeight: 48 }}
+          >
+            Encerrar em garantia
+          </button>
+        </div>
+      )}
+
       {/* Cancelar/negar OS — mesma ação do desktop, precisa motivo (#0160) */}
       {!['encerrada', 'cancelada'].includes(os.status) && (
         <div className="pb-4">
@@ -367,19 +388,23 @@ export default function MobileDetalheOSPage() {
             className="bg-white rounded-xl w-full max-w-md p-4 space-y-3"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="font-semibold text-navy-900">Cancelar OS #{os.id}</div>
-            <div className="text-[13px] text-ink-500">Informe o motivo (obrigatório):</div>
+            <div className="font-semibold text-navy-900">{MOTIVO_TITULO[motivoModal] || 'Motivo'} · OS #{os.id}</div>
+            <div className="text-[13px] text-ink-500">
+              {motivoModal === 'encerrar-garantia'
+                ? 'Fecha sem custo/NF/foto. Informe o motivo (obrigatório):'
+                : 'Informe o motivo (obrigatório):'}
+            </div>
             <textarea
               autoFocus
               value={motivoText}
               onChange={(e) => setMotivoText(e.target.value)}
               rows={3}
-              placeholder="Ex.: feito em garantia, duplicado, não autorizado…"
+              placeholder="Ex.: troca da junta do motor em garantia…"
               className="w-full px-3 py-2 border border-line rounded-lg text-sm"
             />
             {transicionar.isError && (
               <div className="text-xs text-err-fg bg-err-bg border border-err rounded-lg px-3 py-2">
-                {(transicionar.error as any)?.response?.data?.detail || 'Erro ao cancelar. Tente de novo.'}
+                {(transicionar.error as any)?.response?.data?.detail || 'Erro. Tente de novo.'}
               </div>
             )}
             <div className="flex gap-2 pt-1">
@@ -393,9 +418,9 @@ export default function MobileDetalheOSPage() {
               <button
                 onClick={() => transicionar.mutate({ acao: motivoModal, motivo: motivoText.trim() })}
                 disabled={!motivoText.trim() || transicionar.isPending}
-                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white ${motivoText.trim() && !transicionar.isPending ? 'bg-err-fg' : 'bg-ink-300'}`}
+                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white ${motivoText.trim() && !transicionar.isPending ? (motivoModal === 'encerrar-garantia' ? 'bg-naval' : 'bg-err-fg') : 'bg-ink-300'}`}
               >
-                {transicionar.isPending ? 'Cancelando…' : 'Confirmar cancelamento'}
+                {transicionar.isPending ? 'Enviando…' : 'Confirmar'}
               </button>
             </div>
           </div>

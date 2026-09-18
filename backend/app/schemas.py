@@ -175,6 +175,7 @@ class OrdemServicoOut(BaseModel):
     aprovado_em: Optional[datetime] = None
     motivo_aprovacao: Optional[str] = None
     reaberta_de_os_id: Optional[int] = None
+    encerrada_em_garantia: bool = False
     aberto_por_user_id: int
     funcionario_relator_id: Optional[int] = None
     motivo_reprovacao: Optional[str] = None

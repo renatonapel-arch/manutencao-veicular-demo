@@ -325,6 +325,53 @@ async def reprovar(
     return await transicionar(db, os_id, "cancelada", user, motivo=motivo)
 
 
+async def _is_gestor(db: AsyncSession, user: User, filial_id: Optional[int]) -> bool:
+    """Gestor = admin/aprovador global do Clavis, ou papel admin/filial_responsavel
+    no módulo (na filial da OS ou vínculo global)."""
+    if user.role in ("admin", "aprovador"):
+        return True
+    membro = await get_membro(db, user, filial_id=filial_id)
+    return bool(membro and membro.papel in ("admin", "filial_responsavel"))
+
+
+async def encerrar_em_garantia(
+    db: AsyncSession, os_id: int, user: User, motivo: str,
+) -> OrdemServico:
+    """Fecha a OS como serviço em garantia: sem custo, sem exigir NF/foto/item,
+    a partir de QUALQUER estado ativo. Só gestor. Motivo obrigatório (#0177).
+
+    Diferente do encerrar normal (só de em_execucao e travado por docs na tela),
+    aqui o gestor assume que o serviço saiu de graça na garantia — não há NF nem
+    foto de nota pra anexar. Marca encerrada_em_garantia p/ o relatório distinguir.
+    """
+    if not motivo:
+        raise HTTPException(400, "Motivo obrigatório")
+    os = await get_os(db, os_id)
+    if os is None:
+        raise HTTPException(404, "OS não encontrada")
+    if os.status in ("encerrada", "cancelada"):
+        raise HTTPException(400, "OS já finalizada")
+    if not await _is_gestor(db, user, os.filial_id):
+        raise HTTPException(403, "Só gestor encerra em garantia")
+
+    status_anterior = os.status
+    os.status = "encerrada"
+    os.encerrada_em_garantia = True
+    os.valor_total = Decimal("0")
+    os.data_encerramento = datetime.utcnow()
+    if motivo:
+        os.garantia_observacoes = motivo
+
+    await _auditar(
+        db, os_id, user,
+        operacao=f"encerrada-garantia:{status_anterior}→encerrada",
+        motivo=motivo, filial_id=os.filial_id,
+    )
+    await db.commit()
+    await db.refresh(os)
+    return os
+
+
 async def pedir_2o_orcamento(
     db: AsyncSession, os_id: int, user: User, motivo: str,
 ) -> OrdemServico:

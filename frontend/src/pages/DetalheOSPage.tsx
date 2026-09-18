@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
+import { useAuth } from '../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
 
 // v3: cada transição vira POST /ordem-servico/{id}/{acao} — máquina de 9 estados
@@ -23,6 +24,7 @@ const NOVO_ITEM_VAZIO = { tipo_item: 'peca', descricao: '', quantidade: 1, valor
 export default function DetalheOSPage() {
   const { id } = useParams()
   const qc = useQueryClient()
+  const { user } = useAuth()
   const [modalAlerta, setModalAlerta] = useState(false)
   const [tipoAlerta, setTipoAlerta] = useState('manual')
   const [novoItem, setNovoItem] = useState<any>(NOVO_ITEM_VAZIO)
@@ -75,6 +77,7 @@ export default function DetalheOSPage() {
     cancelar: 'Cancelar OS',
     reprovar: 'Reprovar OS',
     'pedir-2o-orcamento': 'Pedir 2º orçamento',
+    'encerrar-garantia': 'Encerrar em garantia (sem custo/NF)',
   }
 
   const addItemMut = useMutation({
@@ -128,6 +131,7 @@ export default function DetalheOSPage() {
   // Negociação (oficina + itens) fica travada depois que a OS fecha o ciclo.
   const podeNegociar = !['encerrada', 'cancelada'].includes(os.status)
   const podeAdicionarItem = novoItem.descricao && novoItem.valor_unitario > 0
+  const isGestor = ['admin', 'aprovador'].includes(user?.role || '')
 
   return (
     <section>
@@ -155,6 +159,15 @@ export default function DetalheOSPage() {
               </button>
             )
           })}
+          {isGestor && !['encerrada', 'cancelada'].includes(os.status) && (
+            <button
+              onClick={() => executarTransicao('encerrar-garantia', true)}
+              className="btn btn-outline"
+              title="Fecha sem custo/NF/foto — serviço feito em garantia"
+            >
+              Encerrar em garantia
+            </button>
+          )}
           {!['encerrada', 'cancelada'].includes(os.status) && (
             <button
               onClick={() => executarTransicao('cancelar', true)}

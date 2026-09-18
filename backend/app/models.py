@@ -229,6 +229,11 @@ class OrdemServico(Base):
     # v3: Reabertura em garantia (vínculo, não estado)
     reaberta_de_os_id = Column(Integer, ForeignKey("os_manutencao.id"), nullable=True)
 
+    # Encerrada como serviço em garantia (sem custo/NF/foto) — #0177.
+    # Marca a OS pra relatório distinguir "fechou de graça em garantia" de
+    # "encerrada normal com NF". Fecha valor_total=0 e pula a exigência de docs.
+    encerrada_em_garantia = Column(Boolean, default=False, nullable=False)
+
     # v3: Identidades — quem operou vs quem é sujeito
     aberto_por_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     funcionario_relator_id = Column(Integer, nullable=True)  # ID Sólides

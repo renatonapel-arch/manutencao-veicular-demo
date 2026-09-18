@@ -420,6 +420,15 @@ async def cancelar(
     return await svc.transicionar(db, os_id, "cancelada", user, motivo=motivo)
 
 
+@router.post("/{os_id}/encerrar-garantia", response_model=OrdemServicoOut)
+async def encerrar_garantia(
+    os_id: int, motivo: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await svc.encerrar_em_garantia(db, os_id, user, motivo=motivo)
+
+
 @router.post("/{os_id}/reabrir-garantia", response_model=OrdemServicoOut, status_code=201)
 async def reabrir_garantia(os_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     return await svc.reabrir_em_garantia(db, os_id, user)
