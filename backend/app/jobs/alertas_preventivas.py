@@ -101,10 +101,14 @@ async def _gerar_preventivas_async(db: AsyncSession, hoje: datetime | None = Non
             )).scalars().first()
 
             # Primeira vez que vemos o par → grava baseline e não abre OS.
+            # data_geracao=hoje (não func.now()) — a âncora de dias tem que usar
+            # o mesmo relógio que o job recebe, senão o cálculo por dias fica
+            # inconsistente (e o teste vira flaky, dependente da data real).
             if ultima is None:
                 db.add(PreventivaGerada(
                     veiculo_id=v.id, plano_id=p.id, os_id=None,
                     ano_mes=ano_mes, km_referencia=v.km_atual or 0,
+                    data_geracao=hoje,
                 ))
                 baselines += 1
                 continue
@@ -148,6 +152,7 @@ async def _gerar_preventivas_async(db: AsyncSession, hoje: datetime | None = Non
             db.add(PreventivaGerada(
                 veiculo_id=v.id, plano_id=p.id, os_id=os_.id,
                 ano_mes=ano_mes, km_referencia=v.km_atual or 0,
+                data_geracao=hoje,
             ))
             geradas += 1
 
