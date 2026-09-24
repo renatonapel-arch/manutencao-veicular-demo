@@ -39,6 +39,8 @@ export default function MobileDetalheOSPage() {
   const [mostrarForm, setMostrarForm] = useState(false)
   const [motivoModal, setMotivoModal] = useState<string | null>(null)  // ação aguardando motivo
   const [motivoText, setMotivoText] = useState('')
+  const NOVA_OFICINA_VAZIA = { nome: '', cidade: '', uf: '', telefone: '' }
+  const [novaOficina, setNovaOficina] = useState<typeof NOVA_OFICINA_VAZIA | null>(null)
 
   const { data: os, isLoading } = useQuery({
     queryKey: ['os', id],
@@ -79,6 +81,21 @@ export default function MobileDetalheOSPage() {
     mutationFn: (payload: any) => api.patch(`/ordem-servico/${id}`, payload).then(r => r.data),
     onSuccess: () => qc.invalidateQueries(),
     onError: (e: any) => alert(e.response?.data?.detail || 'Erro ao atualizar'),
+  })
+
+  // Cadastrar oficina nova na hora (ex: borracharia) e já vincular à OS — #0210.
+  const criarOficinaMut = useMutation({
+    mutationFn: (p: typeof NOVA_OFICINA_VAZIA) => api.post('/oficinas', {
+      nome: p.nome.trim(),
+      cidade: p.cidade.trim() || null,
+      uf: p.uf.trim().toUpperCase() || null,
+      telefone: p.telefone.trim() || null,
+    }).then(r => r.data),
+    onSuccess: (nova: any) => {
+      qc.invalidateQueries({ queryKey: ['oficinas-form'] })
+      patchMut.mutate({ oficina_id: nova.id })
+      setNovaOficina(null)
+    },
   })
 
   const addItemMut = useMutation({
@@ -155,17 +172,59 @@ export default function MobileDetalheOSPage() {
       <div className="bg-white border border-line rounded-lg p-3">
         <div className="text-[10px] uppercase tracking-wider text-ink-500 mb-1">Oficina</div>
         {podeNegociar ? (
-          <select
-            value={os.oficina_id || ''}
-            onChange={(e) => patchMut.mutate({ oficina_id: e.target.value ? Number(e.target.value) : null })}
-            className="w-full px-3 py-2.5 border border-line rounded-lg bg-white text-sm"
-            disabled={patchMut.isPending}
-          >
-            <option value="">— escolher oficina —</option>
-            {(oficinas || []).map((o: any) => (
-              <option key={o.id} value={o.id}>{o.nome} ({o.cidade}/{o.uf})</option>
+          <>
+            <select
+              value={os.oficina_id || ''}
+              onChange={(e) => patchMut.mutate({ oficina_id: e.target.value ? Number(e.target.value) : null })}
+              className="w-full px-3 py-2.5 border border-line rounded-lg bg-white text-sm"
+              disabled={patchMut.isPending}
+            >
+              <option value="">— escolher oficina —</option>
+              {(oficinas || []).map((o: any) => (
+                <option key={o.id} value={o.id}>{o.nome} ({o.cidade}/{o.uf})</option>
+              ))}
+            </select>
+
+            {/* Cadastrar oficina nova na hora (#0210) — só admin (bate com o backend) */}
+            {user?.role === 'admin' && (novaOficina === null ? (
+              <button onClick={() => setNovaOficina(NOVA_OFICINA_VAZIA)}
+                      className="mt-2 text-[13px] text-naval">
+                + Cadastrar oficina nova
+              </button>
+            ) : (
+              <div className="mt-3 pt-3 border-t border-line space-y-2">
+                <div className="text-[11px] text-ink-500">Nova oficina (ex: borracharia)</div>
+                <input autoFocus placeholder="Nome *" value={novaOficina.nome}
+                       onChange={(e) => setNovaOficina({ ...novaOficina, nome: e.target.value })}
+                       className="w-full px-3 py-2 border border-line rounded-lg text-sm" />
+                <div className="flex gap-2">
+                  <input placeholder="Cidade" value={novaOficina.cidade}
+                         onChange={(e) => setNovaOficina({ ...novaOficina, cidade: e.target.value })}
+                         className="flex-1 px-3 py-2 border border-line rounded-lg text-sm" />
+                  <input placeholder="UF" maxLength={2} value={novaOficina.uf}
+                         onChange={(e) => setNovaOficina({ ...novaOficina, uf: e.target.value })}
+                         className="w-16 px-2 py-2 border border-line rounded-lg text-sm uppercase" />
+                </div>
+                <input placeholder="Telefone" value={novaOficina.telefone}
+                       onChange={(e) => setNovaOficina({ ...novaOficina, telefone: e.target.value })}
+                       className="w-full px-3 py-2 border border-line rounded-lg text-sm" />
+                {criarOficinaMut.isError && (
+                  <div className="text-xs text-err-fg bg-err-bg border border-err rounded-lg px-3 py-2">
+                    {(criarOficinaMut.error as any)?.response?.data?.detail || 'Erro ao cadastrar. Tente de novo.'}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={() => setNovaOficina(null)} disabled={criarOficinaMut.isPending}
+                          className="flex-1 border border-line rounded-lg py-2 text-sm text-ink-500">Cancelar</button>
+                  <button onClick={() => criarOficinaMut.mutate(novaOficina)}
+                          disabled={!novaOficina.nome.trim() || criarOficinaMut.isPending}
+                          className={`flex-1 rounded-lg py-2 text-sm font-medium text-white ${novaOficina.nome.trim() && !criarOficinaMut.isPending ? 'bg-naval' : 'bg-ink-300'}`}>
+                    {criarOficinaMut.isPending ? 'Salvando…' : 'Salvar e selecionar'}
+                  </button>
+                </div>
+              </div>
             ))}
-          </select>
+          </>
         ) : (
           <div className="font-medium">{os.oficina?.nome || '—'}</div>
         )}
