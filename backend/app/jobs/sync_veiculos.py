@@ -6,12 +6,15 @@ existia e funciona — mas só era chamado pelo botão manual admin
 POST /admin/sync-frota. Sem alguém lembrar de clicar, veículo novo nunca
 entrava. Este job substitui o mock anterior e roda sozinho de hora em hora,
 chamando exatamente a mesma função do botão admin.
+
+#0220: o job usava o engine global via asyncio.run() numa thread — vazava 1
+conexão a cada 2 execuções e o Postgres estourou. Agora roda via
+run_async_job (engine descartável por execução).
 """
-import asyncio
 import logging
 import os
 
-from ..database import SessionLocal
+from ..database import run_async_job
 from ..integrations.patrimonial_client import sync_veiculos
 
 log = logging.getLogger("manutencao.scheduler")
@@ -19,12 +22,8 @@ log = logging.getLogger("manutencao.scheduler")
 
 def sync_veiculos_job() -> None:
     """Job de hora em hora — mesmo sync_veiculos() do botão admin/sync-frota."""
-    async def _run():
-        async with SessionLocal() as db:
-            return await sync_veiculos(db)
-
     try:
-        result = asyncio.run(_run())
+        result = run_async_job(sync_veiculos)
         log.info("Sync Frota automático: %s", result)
     except Exception as e:
         log.warning("Sync Frota automático falhou (tenta de novo na próxima hora): %s", e)

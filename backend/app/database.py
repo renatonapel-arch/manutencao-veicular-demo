@@ -10,7 +10,8 @@ o Alembic (ver env.py) — todo runtime é 100% async.
 """
 from __future__ import annotations
 
-from typing import AsyncGenerator
+import asyncio
+from typing import AsyncGenerator, Awaitable, Callable, TypeVar
 
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -18,6 +19,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.pool import NullPool
 
 from .config import settings
 
@@ -64,3 +66,30 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             yield db
         finally:
             await db.close()
+
+
+T = TypeVar("T")
+
+
+def run_async_job(fn: Callable[[AsyncSession], Awaitable[T]]) -> T:
+    """Roda `fn(db)` num event loop PRÓPRIO, com engine descartável (NullPool).
+
+    Jobs do APScheduler rodam em thread própria, fora do loop do uvicorn onde o
+    `engine` global foi criado. Reusar aquele engine via asyncio.run() deixa
+    conexões asyncpg presas a um loop que morre no fim do job: o pool nunca as
+    fecha, o Postgres chega em max_connections e o módulo inteiro cai
+    (#0220 — 100/100 conexões, login 500 pra todo mundo).
+
+    Engine próprio + NullPool + dispose no finally = nada sobrevive ao job.
+    """
+    async def _run() -> T:
+        eng = create_async_engine(DATABASE_URL_ASYNC, poolclass=NullPool, future=True)
+        try:
+            async with async_sessionmaker(
+                bind=eng, class_=AsyncSession, expire_on_commit=False,
+            )() as db:
+                return await fn(db)
+        finally:
+            await eng.dispose()
+
+    return asyncio.run(_run())

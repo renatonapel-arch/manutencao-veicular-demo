@@ -19,7 +19,6 @@ Enquanto o Patrimônio não puser o km real no ar (hoje km_atual=0 em vários),
 a regra por km simplesmente não dispara — de propósito, não é bug. A regra por
 dias funciona independente do km.
 """
-import asyncio
 import logging
 import os
 import uuid
@@ -29,7 +28,7 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..database import SessionLocal
+from ..database import run_async_job
 from ..models import (
     OrdemServico, PlanoPreventiva, PreventivaGerada, VeiculoSnapshot,
 )
@@ -168,11 +167,9 @@ async def _gerar_preventivas_async(db: AsyncSession, hoje: datetime | None = Non
 
 def gerar_preventivas() -> dict:
     """Job diário — abre OS preventivas vencidas. Wrapper sync do scheduler."""
-    async def _run():
-        async with SessionLocal() as db:
-            return await _gerar_preventivas_async(db)
     try:
-        result = asyncio.run(_run())
+        # engine descartável por execução (#0220: o engine global vazava conexão)
+        result = run_async_job(_gerar_preventivas_async)
         log.info("gerar_preventivas: %s", result)
         return result
     except Exception as e:  # noqa: BLE001
