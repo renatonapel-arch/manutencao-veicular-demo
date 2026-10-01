@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
+import AnexoViewer, { AnexoVisual } from '../components/AnexoViewer'
 
 // v3: cada transição vira POST /ordem-servico/{id}/{acao} — máquina de 9 estados
 const TRANSICOES_ACAO: { de: string; acao: string; label: string; cor: string; precisaMotivo?: boolean }[] = [
@@ -32,6 +33,7 @@ export default function DetalheOSPage() {
   const [motivoText, setMotivoText] = useState('')
   const NOVA_OFICINA_VAZIA = { nome: '', cidade: '', uf: '', telefone: '' }
   const [novaOficina, setNovaOficina] = useState<typeof NOVA_OFICINA_VAZIA | null>(null)
+  const [anexoAberto, setAnexoAberto] = useState<AnexoVisual | null>(null)  // foto/NF aberta na própria tela
 
   const { data: os, isLoading } = useQuery({
     queryKey: ['os', id],
@@ -412,10 +414,10 @@ export default function DetalheOSPage() {
                 <div className="text-[11px] font-medium mb-1.5">📷 Fotos <span className={temFoto ? 'text-success-fg' : 'text-ink-400'}>({(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).length})</span></div>
                 <div className="grid grid-cols-3 gap-1.5">
                   {(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).map((a: any) => (
-                    <a key={a.id} href={a.arquivo_url} target="_blank" rel="noreferrer"
+                    <button key={a.id} type="button" onClick={() => setAnexoAberto(a)}
                        className="aspect-square rounded border border-border overflow-hidden block hover:opacity-80">
                       <img src={a.arquivo_url} alt="Foto anexada" className="w-full h-full object-cover" />
-                    </a>
+                    </button>
                   ))}
                   <label className="aspect-square border-2 border-dashed border-border-strong rounded flex flex-col items-center justify-center text-ink-500 text-[10px] cursor-pointer hover:bg-gelo">
                     <span className="text-2xl">+</span>Foto
@@ -427,14 +429,14 @@ export default function DetalheOSPage() {
               <div>
                 <div className="text-[11px] font-medium mb-1.5">📄 NF <span className={temNF ? 'text-success-fg' : 'text-danger-fg'}>{temNF ? '✓' : '(obrigatória)'}</span></div>
                 {temNF && (
-                  <a
-                    href={(os.anexos || []).find((a: any) => a.tipo === 'nf')?.arquivo_url}
-                    target="_blank" rel="noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => setAnexoAberto((os.anexos || []).find((a: any) => a.tipo === 'nf'))}
                     className="aspect-[3/1] w-full border-2 rounded flex flex-col items-center justify-center border-success bg-success-bg/30 hover:bg-success-bg/50 mb-1.5"
                   >
                     <span className="text-3xl">📄</span>
                     <span className="font-medium text-sm mt-1">Ver NF anexada</span>
-                  </a>
+                  </button>
                 )}
                 <label className={`${temNF ? 'py-1.5' : 'aspect-[3/1]'} w-full border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer ${temNF ? 'border-border text-ink-500 text-xs' : 'border-danger bg-danger-bg/20'}`}>
                   {!temNF && <span className="text-3xl">📄</span>}
@@ -538,6 +540,8 @@ export default function DetalheOSPage() {
           </div>
         </div>
       )}
+
+      <AnexoViewer anexo={anexoAberto} onClose={() => setAnexoAberto(null)} />
     </section>
   )
 }

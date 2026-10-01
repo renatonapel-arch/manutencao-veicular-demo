@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../../components/Badges'
+import AnexoViewer, { AnexoVisual } from '../../components/AnexoViewer'
 
 /**
  * Detalhe mobile — mostra a OS e os botões da PRÓXIMA transição válida.
@@ -41,6 +42,7 @@ export default function MobileDetalheOSPage() {
   const [motivoText, setMotivoText] = useState('')
   const NOVA_OFICINA_VAZIA = { nome: '', cidade: '', uf: '', telefone: '' }
   const [novaOficina, setNovaOficina] = useState<typeof NOVA_OFICINA_VAZIA | null>(null)
+  const [anexoAberto, setAnexoAberto] = useState<AnexoVisual | null>(null)  // foto/NF aberta na própria tela
 
   const { data: os, isLoading } = useQuery({
     queryKey: ['os', id],
@@ -346,10 +348,10 @@ export default function MobileDetalheOSPage() {
           </div>
           <div className="grid grid-cols-3 gap-2">
             {(os.anexos || []).filter((a: any) => a.tipo?.startsWith('foto')).map((a: any) => (
-              <a key={a.id} href={a.arquivo_url} target="_blank" rel="noreferrer"
+              <button key={a.id} type="button" onClick={() => setAnexoAberto(a)}
                  className="aspect-square rounded-lg overflow-hidden block border border-line">
                 <img src={a.arquivo_url} alt="Foto anexada" className="w-full h-full object-cover" />
-              </a>
+              </button>
             ))}
             <label className="aspect-square border-2 border-dashed border-line rounded-lg flex flex-col items-center justify-center text-ink-500 text-[11px] active:bg-sky-bg cursor-pointer" style={{ minHeight: 80 }}>
               <span className="font-semibold text-sm text-navy-800">+ Câmera</span>
@@ -368,13 +370,13 @@ export default function MobileDetalheOSPage() {
             NF {temNF ? '· anexada' : '· obrigatória pra encerrar'}
           </div>
           {temNF && (
-            <a
-              href={(os.anexos || []).find((a: any) => a.tipo === 'nf')?.arquivo_url}
-              target="_blank" rel="noreferrer"
+            <button
+              type="button"
+              onClick={() => setAnexoAberto((os.anexos || []).find((a: any) => a.tipo === 'nf'))}
               className="block w-full border-2 rounded-lg py-4 flex flex-col items-center mb-1.5 border-ok bg-ok-bg/20 active:bg-ok-bg/40"
             >
               <span className="font-medium text-sm text-navy-800">Ver NF anexada</span>
-            </a>
+            </button>
           )}
           <label className={`block w-full border-2 border-dashed rounded-lg ${temNF ? 'py-2' : 'py-5'} flex flex-col items-center cursor-pointer active:bg-sky-bg border-line`}>
             <span className={`font-medium text-navy-800 ${temNF ? 'text-xs' : 'text-sm'}`}>{temNF ? 'Substituir NF' : '+ Anexar NF'}</span>
@@ -485,6 +487,8 @@ export default function MobileDetalheOSPage() {
           </div>
         </div>
       )}
+
+      <AnexoViewer anexo={anexoAberto} onClose={() => setAnexoAberto(null)} />
     </section>
   )
 }

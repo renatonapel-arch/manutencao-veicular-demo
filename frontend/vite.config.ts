@@ -33,6 +33,11 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        // Navegação para URL que o SERVIDOR atende (arquivo anexado, API) não pode
+        // cair no fallback de SPA. Sem isso, abrir /uploads/x.jpg numa aba (link
+        // direto, botão direito, download) devolvia o index.html do módulo em vez
+        // do arquivo — provado em navegador limpo: sem SW = foto, com SW = app.
+        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
         // NetworkOnly pra tudo em /api — NUNCA cachear.
         //
         // Motivo crítico: o Workbox usa a URL como chave de cache por padrão,
