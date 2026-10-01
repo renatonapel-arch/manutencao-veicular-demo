@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
-import AnexoViewer, { AnexoVisual } from '../components/AnexoViewer'
+import AnexoViewer, { AnexoVisual, nfMaisRecente } from '../components/AnexoViewer'
 
 // v3: cada transição vira POST /ordem-servico/{id}/{acao} — máquina de 9 estados
 const TRANSICOES_ACAO: { de: string; acao: string; label: string; cor: string; precisaMotivo?: boolean }[] = [
@@ -431,7 +431,7 @@ export default function DetalheOSPage() {
                 {temNF && (
                   <button
                     type="button"
-                    onClick={() => setAnexoAberto((os.anexos || []).find((a: any) => a.tipo === 'nf'))}
+                    onClick={() => setAnexoAberto(nfMaisRecente(os.anexos) ?? null)}
                     className="aspect-[3/1] w-full border-2 rounded flex flex-col items-center justify-center border-success bg-success-bg/30 hover:bg-success-bg/50 mb-1.5"
                   >
                     <span className="text-3xl">📄</span>

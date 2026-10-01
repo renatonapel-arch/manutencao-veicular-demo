@@ -8,6 +8,14 @@ export interface AnexoVisual {
 }
 
 /**
+ * NF vigente da OS. "Substituir NF" só ACRESCENTA outro anexo (o antigo continua
+ * no banco), então a NF atual é a de maior id — não a primeira da lista.
+ */
+export function nfMaisRecente<T extends AnexoVisual & { id: number; tipo: string }>(anexos: T[] | null | undefined): T | undefined {
+  return (anexos || []).filter((a) => a.tipo === 'nf').sort((a, b) => b.id - a.id)[0]
+}
+
+/**
  * Visualizador de anexo NA PRÓPRIA TELA (follow-up do #0150).
  *
  * O módulo roda num iframe do Clavis. Antes, foto/NF eram `<a target="_blank">`:

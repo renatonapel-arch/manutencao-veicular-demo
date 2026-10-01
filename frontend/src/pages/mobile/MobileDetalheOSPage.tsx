@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../../components/Badges'
-import AnexoViewer, { AnexoVisual } from '../../components/AnexoViewer'
+import AnexoViewer, { AnexoVisual, nfMaisRecente } from '../../components/AnexoViewer'
 
 /**
  * Detalhe mobile — mostra a OS e os botões da PRÓXIMA transição válida.
@@ -372,7 +372,7 @@ export default function MobileDetalheOSPage() {
           {temNF && (
             <button
               type="button"
-              onClick={() => setAnexoAberto((os.anexos || []).find((a: any) => a.tipo === 'nf'))}
+              onClick={() => setAnexoAberto(nfMaisRecente(os.anexos) ?? null)}
               className="block w-full border-2 rounded-lg py-4 flex flex-col items-center mb-1.5 border-ok bg-ok-bg/20 active:bg-ok-bg/40"
             >
               <span className="font-medium text-sm text-navy-800">Ver NF anexada</span>
