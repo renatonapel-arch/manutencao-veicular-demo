@@ -49,6 +49,8 @@ services:
       RH_JORNADA_SYNC_SECRET: ${RH_JORNADA_SYNC_SECRET:-}
       CLAVIS_JWT_SECRET: ${CLAVIS_JWT_SECRET:-}
       CLAVIS_ALLOWED_EMAILS: ${CLAVIS_ALLOWED_EMAILS:-}
+      # Login por e-mail/senha (usuários seed) — SÓ demo local. Em produção fica desligado.
+      LOCAL_LOGIN_ENABLED: "true"
       FEATURE_SIGE_ENABLED: "false"
       STAGE: demo
       LOG_LEVEL: INFO

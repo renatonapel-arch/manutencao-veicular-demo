@@ -128,7 +128,13 @@ async def get_current_user(
     if payload.get("_source") == "clavis":
         return await _provision_from_clavis(db, payload)
 
-    # Auth local — lookup por sub (user_id)
+    # Auth local — só com o login local ligado (demo/dev). Em produção vale só o
+    # SSO do Clavis; sem esta trava, tokens locais emitidos antes continuariam
+    # abrindo a porta até vencer (24 h).
+    if not settings.LOCAL_LOGIN_ENABLED:
+        raise HTTPException(status_code=401, detail="Login local desativado — entre pelo Clavis")
+
+    # lookup por sub (user_id)
     user_id = int(payload.get("sub", 0))
     stmt = select(User).where(User.id == user_id, User.ativo.is_(True))
     user = (await db.execute(stmt)).scalar_one_or_none()

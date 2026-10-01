@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { api } from '../api/client'
 import { useAuth } from './AuthContext'
+
+const CLAVIS_URL = 'https://clavis.napel.com.br/patrimonio/manutencao'
 
 const USUARIOS_DEMO = [
   { email: 'hudson@napel.local', role: 'admin' },
@@ -18,6 +21,13 @@ export default function LoginPage() {
   const [senha, setSenha] = useState('password123')
   const [erro, setErro] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  // Formulário de demo só se o backend liberar o login local (dev/demo). null =
+  // ainda perguntando; erro = trata como desligado (fecha por padrão).
+  const [loginLocal, setLoginLocal] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    api.get('/auth/config').then((r) => setLoginLocal(!!r.data.local_login)).catch(() => setLoginLocal(false))
+  }, [])
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,6 +41,26 @@ export default function LoginPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  if (loginLocal === null) return <div className="min-h-screen bg-noite" />
+
+  if (!loginLocal) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-noite p-4">
+        <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 text-center space-y-4">
+          <div className="text-xs tracking-widest text-ink-500">CLAVIS · NAPEL</div>
+          <h1 className="text-2xl font-bold text-naval">Manutenção Veicular</h1>
+          <p className="text-sm text-ink-500">
+            O acesso é pelo Clavis. Abra o Clavis, entre com o seu usuário e vá em Patrimônio › Manutenção Veicular.
+          </p>
+          <a href={CLAVIS_URL} target="_blank" rel="noreferrer"
+             className="inline-block w-full bg-naval text-white py-2.5 rounded font-medium hover:bg-noite">
+            Abrir o Clavis
+          </a>
+        </div>
+      </div>
+    )
   }
 
   return (

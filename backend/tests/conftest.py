@@ -23,6 +23,7 @@ os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
 os.environ["JWT_SECRET"] = "test-secret"
 os.environ["REDIS_URL"] = "redis://localhost:6379/0"
 os.environ["FROTA_TOKEN"] = "test"
+os.environ["LOCAL_LOGIN_ENABLED"] = "true"  # padrão é desligado; os testes de auth trocam por monkeypatch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { api, tokenStore } from '../api/client'
+import { api, isEmbedded, tokenStore } from '../api/client'
 
 export interface User {
   id: number
@@ -16,27 +16,9 @@ interface AuthCtx {
   loading: boolean
   login: (email: string, senha: string) => Promise<void>
   logout: () => Promise<void>
-  trocarUsuario: (email: string) => Promise<void>
 }
 
 const Ctx = createContext<AuthCtx>({} as AuthCtx)
-
-// Modo demo: auto-login transparente como Hudson (admin global).
-// SÓ ativa em modo standalone (fora do Clavis embarcado). Se estamos dentro
-// de um iframe do Clavis, o SSO manda — nunca voltamos pra auto-login local
-// porque isso confundiria "está logado como hudson@napel.local" quando o
-// user real é renato@napel.com.br via SSO.
-const AUTO_LOGIN_EMAIL = 'hudson@napel.local'
-const AUTO_LOGIN_SENHA = 'password123'
-
-function isEmbedded(): boolean {
-  try { return window.self !== window.top } catch { return true }
-}
-
-async function autoLogin(): Promise<{ token: string; user: User }> {
-  const r = await api.post('/auth/login', { email: AUTO_LOGIN_EMAIL, senha: AUTO_LOGIN_SENHA })
-  return { token: r.data.access_token, user: r.data.user }
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient()
@@ -70,22 +52,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 3) Embarcado no Clavis mas sem token/SSO válido → deixa cair na
-      //    tela de erro específica em vez de tela de login (que confunde
-      //    quem já está logado no Clavis).
-      if (isEmbedded()) {
-        setLoading(false)
-        return
-      }
-
-      // 4) Standalone (demo VPS): auto-login como Hudson pra pilotagem sem senha
-      try {
-        const { token: t, user: u } = await autoLogin()
-        tokenStore.set(t)
-        setUser(u)
-      } catch (e) {
-        console.error('Auto-login falhou:', e)
-      }
+      // 3) Sem sessão válida: acabou o auto-login como Hudson (admin sem senha —
+      //    achado de segurança de 01/10/2026). Embarcado no Clavis cai no card de
+      //    "Sessão expirada"; fora dele o RequireAuth manda pra /login, que só
+      //    mostra o formulário se o backend liberar o login local.
       setLoading(false)
     }
     boot()
@@ -99,11 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     qc.clear()
   }
 
-  // Troca rápida de usuário (pra testar RBAC) — sem precisar passar pela tela de login
-  const trocarUsuario = async (email: string) => {
-    await login(email, AUTO_LOGIN_SENHA)
-  }
-
   const logout = async () => {
     try { await api.post('/auth/logout') } catch {}
     tokenStore.clear()
@@ -114,17 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.reload()
       return
     }
-    // Standalone (demo): auto-login como Hudson
-    try {
-      const { token: t, user: u } = await autoLogin()
-      tokenStore.set(t)
-      setUser(u)
-    } catch {
-      window.location.href = '/login'
-    }
+    window.location.href = '/login'
   }
 
-  return <Ctx.Provider value={{ user, loading, login, logout, trocarUsuario }}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={{ user, loading, login, logout }}>{children}</Ctx.Provider>
 }
 
 export const useAuth = () => useContext(Ctx)

@@ -34,6 +34,10 @@ npm run dev
 
 PIN/senha demo: `password123` para todos os 6 usuários seed.
 
+> O login por e-mail/senha só funciona com `LOCAL_LOGIN_ENABLED=true` (já ligado no
+> `docker-compose.yml`). Em produção fica **desligado**: o acesso é só pelo SSO do
+> Clavis (iframe) — sem isso, qualquer pessoa com o link entrava como admin.
+
 ## Usuários seed
 
 | Email | Role | Filial |

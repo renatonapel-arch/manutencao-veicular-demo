@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # Allowlist CSV — só emails listados aqui têm acesso quando SSO Clavis
     # está ligado. Vazio = todos que vierem com JWT válido do Clavis passam.
     CLAVIS_ALLOWED_EMAILS: str = ""
+    # Login local por e-mail/senha (usuários seed *@napel.local, senha de demo).
+    # DESLIGADO por padrão: em produção o acesso é só via SSO do Clavis. Ligado,
+    # qualquer pessoa com o link entrava como admin (achado de 01/10/2026).
+    # Só ligar em demo/dev local (docker-compose.yml já liga).
+    LOCAL_LOGIN_ENABLED: bool = False
 
     EVOLUTION_ENABLED: bool = False
     FEATURE_SIGE_ENABLED: bool = False
