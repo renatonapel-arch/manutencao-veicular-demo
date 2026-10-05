@@ -5,6 +5,7 @@ import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
 import AnexoViewer, { AnexoVisual, nfMaisRecente } from '../components/AnexoViewer'
+import { OrigemCaixaCard, OrigemChip } from '../components/OrigemCaixa'
 
 // v3: cada transição vira POST /ordem-servico/{id}/{acao} — máquina de 9 estados
 const TRANSICOES_ACAO: { de: string; acao: string; label: string; cor: string; precisaMotivo?: boolean }[] = [
@@ -161,6 +162,7 @@ export default function DetalheOSPage() {
           <div className="text-lg font-semibold font-mono text-naval">OS #{os.id}</div>
           <StatusBadge status={os.status}/>
           <TipoBadge tipo={os.tipo_os}/>
+          <OrigemChip os={os}/>
           <span className="text-xs text-ink-500">Aberta em {fmtDataHora(os.data_abertura)}</span>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
@@ -201,6 +203,10 @@ export default function DetalheOSPage() {
 
       <div className="grid grid-cols-3 gap-3">
         <div className="col-span-2 space-y-3">
+          {/* Origem — compra do Caixa Interno que virou OS (#0233); só aparece nessas OS */}
+          <OrigemCaixaCard os={os} podeConferir={isGestor} conferindo={transicaoMut.isPending}
+                           onConferir={() => executarTransicao('conferir')} />
+
           {/* Veículo */}
           <div className="card p-5">
             <div className="kpi-label mb-3">1 · Veículo</div>

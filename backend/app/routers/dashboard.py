@@ -125,10 +125,15 @@ async def dashboard(
     km_percorrido = km_percorrido_calc or 1
     cpk = (custo_ytd / km_percorrido).quantize(Decimal("0.01"))
 
-    # % com NF
-    total_encerradas = await _conta(db, escopo + [OrdemServico.status == "encerrada"])
+    # % com NF — fora as OS que nasceram em outro módulo (compra do Caixa Interno, #0233):
+    # a nota/cupom delas fica no Caixa, então "Conferido" sem NF anexada aqui não é falha de
+    # processo e não pode puxar o indicador pra baixo.
+    total_encerradas = await _conta(db, escopo + [
+        OrdemServico.status == "encerrada", OrdemServico.origem.is_(None),
+    ])
     com_nf = await _conta(db, escopo + [
         OrdemServico.status == "encerrada",
+        OrdemServico.origem.is_(None),
         OrdemServico.id.in_(select(AnexosOs.os_id).where(AnexosOs.tipo == "nf")),
     ])
     pct_nf = (

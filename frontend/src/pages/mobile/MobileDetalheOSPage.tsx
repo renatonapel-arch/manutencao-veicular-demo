@@ -5,6 +5,7 @@ import { api } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../../components/Badges'
 import AnexoViewer, { AnexoVisual, nfMaisRecente } from '../../components/AnexoViewer'
+import { OrigemCaixaCard, OrigemChip } from '../../components/OrigemCaixa'
 
 /**
  * Detalhe mobile — mostra a OS e os botões da PRÓXIMA transição válida.
@@ -151,6 +152,7 @@ export default function MobileDetalheOSPage() {
           <span className="font-mono text-lg font-semibold text-navy-800">OS #{os.id}</span>
           <StatusBadge status={os.status} />
           <TipoBadge tipo={os.tipo_os} />
+          <OrigemChip os={os} />
         </div>
         <div className="font-mono text-base font-medium">
           {os.veiculo?.placa} · {os.veiculo?.modelo}
@@ -161,6 +163,10 @@ export default function MobileDetalheOSPage() {
           <span>· {fmtDataHora(os.data_abertura)}</span>
         </div>
       </div>
+
+      {/* Origem — compra do Caixa Interno que virou OS (#0233); só aparece nessas OS */}
+      <OrigemCaixaCard os={os} podeConferir={['admin', 'aprovador'].includes(user?.role || '')}
+                       conferindo={transicionar.isPending} onConferir={() => executarTransicao('conferir')} />
 
       {/* Descrição */}
       {os.descricao_problema && (

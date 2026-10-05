@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { api } from '../../api/client'
 import { fmtBRL, fmtData, FilialChip, StatusBadge } from '../../components/Badges'
 import { Icon } from '../../components/Icons'
+import { OrigemChip } from '../../components/OrigemCaixa'
 import { useFilial } from '../../context/FilialContext'
 
 const STATUS = [
@@ -70,6 +71,7 @@ export default function MobileListaOSPage() {
                   <span className="font-mono text-navy-800 font-semibold text-sm">#{os.id}</span>
                   <StatusBadge status={os.status} />
                   <FilialChip filialId={os.filial_id} />
+                  <OrigemChip os={os} />
                 </div>
                 <div className="font-semibold font-mono num text-sm text-navy-900 shrink-0">
                   {fmtBRL(os.valor_total)}

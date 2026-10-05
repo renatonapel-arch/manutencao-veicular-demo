@@ -429,6 +429,11 @@ async def encerrar_garantia(
     return await svc.encerrar_em_garantia(db, os_id, user, motivo=motivo)
 
 
+@router.post("/{os_id}/conferir", response_model=OrdemServicoOut)
+async def conferir(os_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    return await svc.conferir_os_externa(db, os_id, user)
+
+
 @router.post("/{os_id}/reabrir-garantia", response_model=OrdemServicoOut, status_code=201)
 async def reabrir_garantia(os_id: int, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     return await svc.reabrir_em_garantia(db, os_id, user)

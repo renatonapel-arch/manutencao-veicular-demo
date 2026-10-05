@@ -12,7 +12,7 @@ import uuid
 from sqlalchemy import (
     BigInteger, Boolean, CheckConstraint, Column, Date, DateTime,
     ForeignKey, Index, Integer, Numeric, String, Text,
-    UniqueConstraint, func,
+    UniqueConstraint, func, text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
@@ -238,6 +238,13 @@ class OrdemServico(Base):
     aberto_por_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     funcionario_relator_id = Column(Integer, nullable=True)  # ID Sólides
 
+    # OS que nasceu em outro módulo (ex.: compra de manutenção no Caixa Interno) — #0233.
+    # origem_ref = chave de idempotência na origem (cupom); origem_dados = o que a tela
+    # mostra no card "Origem" (quem comprou, emitente, nota, link da compra).
+    origem = Column(String(24), nullable=True)
+    origem_ref = Column(String(64), nullable=True)
+    origem_dados = Column(JSONB, nullable=True)
+
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime(timezone=True), index=True)  # v3: index p/ helper _ativas
 
@@ -249,6 +256,11 @@ class OrdemServico(Base):
     __table_args__ = (
         Index("idx_os_filial_status_data", "filial_id", "status", "data_abertura"),
         Index("idx_os_veiculo_data", "veiculo_id", "data_abertura"),
+        # 1 OS ATIVA por (origem, origem_ref). Cancelada libera a chave — é o que
+        # permite "corrigir a placa" no Caixa: cancela a OS e cria outra do mesmo cupom.
+        Index("ix_os_origem_ref_ativa", "origem", "origem_ref", unique=True,
+              postgresql_where=text("origem IS NOT NULL AND deleted_at IS NULL AND status <> 'cancelada'"),
+              sqlite_where=text("origem IS NOT NULL AND deleted_at IS NULL AND status <> 'cancelada'")),
         CheckConstraint("km_veiculo >= 0 AND km_veiculo <= 10000000", name="ck_km_os_range"),
         _check_in("tipo_os", TIPO_OS_VALORES, "ck_os_tipo"),
         _check_in("status", STATUS_OS_VALORES, "ck_os_status"),

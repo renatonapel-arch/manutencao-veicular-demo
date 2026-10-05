@@ -42,6 +42,12 @@ class Settings(BaseSettings):
     TROCA_OLEO_URL: str = "https://troca-oleo.napel.com.br"
     TROCA_OLEO_SYNC_SECRET: str = ""
 
+    # Caixa Interno → OS (#0233): o Caixa chama /api/integracoes/caixa-interno com
+    # este segredo no header X-Sync-Secret. Vazio = integração fechada (401 sempre).
+    MANUTENCAO_CAIXA_SYNC_SECRET: str = ""
+    # Base do link que o Caixa guarda ao lado de "OS #N" (abre o módulo dentro do Clavis).
+    CLAVIS_PUBLIC_URL: str = "https://clavis.napel.com.br"
+
     # Pipefy — import histórico
     PIPEFY_TOKEN: str = ""
 

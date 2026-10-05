@@ -372,6 +372,37 @@ async def encerrar_em_garantia(
     return os
 
 
+async def conferir_os_externa(
+    db: AsyncSession, os_id: int, user: User,
+) -> OrdemServico:
+    """Gestor confere uma OS que nasceu em outro módulo (compra do Caixa Interno,
+    #0233) e a encerra — de qualquer estado ativo, sem exigir foto/NF/itens: o
+    comprovante da compra fica no Caixa. Diferente da garantia, o custo é REAL:
+    valor_total fica e entra nos números ao encerrar. Sem notificação (a OS já
+    nasceu sem aviso; conferir é rotina e não pode virar enxurrada de WhatsApp)."""
+    os = await get_os(db, os_id)
+    if os is None:
+        raise HTTPException(404, "OS não encontrada")
+    if not os.origem:
+        raise HTTPException(400, "Só OS vinda de outro módulo (ex.: Caixa Interno) pode ser conferida")
+    if os.status in ("encerrada", "cancelada"):
+        raise HTTPException(400, "OS já finalizada")
+    if not await _is_gestor(db, user, os.filial_id):
+        raise HTTPException(403, "Só gestor confere")
+
+    status_anterior = os.status
+    os.status = "encerrada"
+    os.data_encerramento = datetime.utcnow()
+    await _auditar(
+        db, os_id, user,
+        operacao=f"conferida:{status_anterior}→encerrada",
+        motivo="Conferida pelo gestor", filial_id=os.filial_id,
+    )
+    await db.commit()
+    await db.refresh(os)
+    return os
+
+
 async def pedir_2o_orcamento(
     db: AsyncSession, os_id: int, user: User, motivo: str,
 ) -> OrdemServico:

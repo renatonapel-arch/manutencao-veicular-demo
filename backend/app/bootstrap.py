@@ -80,6 +80,13 @@ _MIGRATIONS_V3 = [
     "ALTER TABLE preventiva_gerada ADD COLUMN IF NOT EXISTS km_referencia integer",
     # 4c) encerramento em garantia (sem custo/NF/foto) — #0177
     "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS encerrada_em_garantia boolean NOT NULL DEFAULT false",
+    # 4d) origem externa da OS (compra do Caixa Interno) — #0233. Colunas nullable
+    #     (seguro em tabela populada); índice único parcial: cancelada libera a chave.
+    "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS origem varchar(24)",
+    "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS origem_ref varchar(64)",
+    "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS origem_dados jsonb",
+    """CREATE UNIQUE INDEX IF NOT EXISTS ix_os_origem_ref_ativa ON os_manutencao(origem, origem_ref)
+        WHERE origem IS NOT NULL AND deleted_at IS NULL AND status <> 'cancelada'""",
     # 5) view de garantia ativa
     """CREATE OR REPLACE VIEW manutencao_garantia_ativa AS
         SELECT i.id AS item_id, o.id AS os_id, o.veiculo_id, o.oficina_id,

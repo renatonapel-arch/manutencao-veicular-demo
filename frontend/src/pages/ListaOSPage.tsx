@@ -5,6 +5,7 @@ import { api } from '../api/client'
 import { fmtBRL, fmtData, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
 import { DataTable } from '../components/DataTable'
 import { Icon } from '../components/Icons'
+import { OrigemChip } from '../components/OrigemCaixa'
 import { useFilial } from '../context/FilialContext'
 
 /** Lista de OS — layout do mockup: busca + Nova OS, tabs de status, tabela em card. */
@@ -108,7 +109,12 @@ export default function ListaOSPage() {
             {
               key: 'id', label: 'OS',
               accessor: (o: any) => o.id, filter: true,
-              render: (o: any) => <span className="font-mono font-semibold text-navy-800">#{o.id}</span>,
+              render: (o: any) => (
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="font-mono font-semibold text-navy-800">#{o.id}</span>
+                  <OrigemChip os={o} />
+                </span>
+              ),
             },
             {
               key: 'data_abertura', label: 'Aberta em',
