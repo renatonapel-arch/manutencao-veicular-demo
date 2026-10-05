@@ -196,6 +196,23 @@ async def test_sem_nota_leva_o_motivo_no_texto(http, db, veiculo, admin_user):
 async def test_payload_invalido_422(http, veiculo, admin_user, mudanca):
     r = await http.post("/api/integracoes/caixa-interno", json=_payload(**mudanca), headers=HEADERS)
     assert r.status_code == 422
+    corpo = r.json()
+    # formato do contrato: o Caixa mostra `detail` à operadora, então tem que ser texto (não a lista do FastAPI)
+    assert corpo["ok"] is False and corpo["motivo"] == "payload_invalido"
+    assert isinstance(corpo["detail"], str) and corpo["detail"]
+
+
+async def test_corpo_que_nao_e_json_422_no_formato_do_contrato(http, veiculo, admin_user):
+    r = await http.post("/api/integracoes/caixa-interno", content=b"{isso nao e json",
+                        headers={**HEADERS, "Content-Type": "application/json"})
+    assert r.status_code == 422 and r.json()["motivo"] == "payload_invalido"
+
+
+async def test_compra_com_muitos_itens_de_ocr_passa(http, db, veiculo, admin_user):
+    itens = [{"descricao": f"ITEM {i}", "quantidade": 1, "valor_unitario": 1.0} for i in range(150)]
+    r = await http.post("/api/integracoes/caixa-interno", json=_payload(itens=itens), headers=HEADERS)
+    assert r.status_code == 201
+    assert len((await _os_do_cupom(db))[0].origem_dados["itens"]) == 150
 
 
 @pytest.mark.parametrize("placa", ["   ", "ABCDEFGHIJK"])

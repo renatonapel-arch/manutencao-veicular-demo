@@ -32,9 +32,9 @@ from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -82,7 +82,7 @@ class CompraCaixaIn(BaseModel):
     emitente: Optional[str] = None
     emitente_cnpj: Optional[str] = None
     doc_ref: Optional[str] = None  # chave de acesso da NF-e
-    itens: Optional[list[dict]] = Field(default=None, max_length=100)  # só informativo (OCR)
+    itens: Optional[list[dict]] = Field(default=None, max_length=500)  # só informativo (OCR)
     motivo: Optional[str] = None  # sem_nota: por que não tem nota
     # vira href na tela: só https (nada de javascript:)
     link_compra: Optional[str] = Field(default=None, pattern=r"^https://")
@@ -149,8 +149,21 @@ def _resposta_duplicado(os_: OrdemServico) -> JSONResponse:
     })
 
 
+def _resumo_validacao(exc: ValidationError) -> str:
+    return "; ".join(f"{'.'.join(str(p) for p in e['loc'])}: {e['msg']}" for e in exc.errors())[:400]
+
+
 @router.post("", status_code=201)
-async def receber_compra(payload: CompraCaixaIn, db: AsyncSession = Depends(get_db)):
+async def receber_compra(request: Request, db: AsyncSession = Depends(get_db)):
+    # Valida aqui (e não pelo parâmetro tipado) para que TODO erro saia no formato do
+    # contrato — {ok, motivo, detail: texto}: o Caixa mostra o `detail` à operadora, e o
+    # 422 padrão do FastAPI traria `detail` como lista.
+    try:
+        payload = CompraCaixaIn.model_validate(await request.json())
+    except ValidationError as exc:
+        return _erro(422, "payload_invalido", _resumo_validacao(exc))
+    except ValueError:  # corpo que não é JSON
+        return _erro(422, "payload_invalido", "O corpo da requisição não é um JSON válido")
     placa = _normalizar_placa(payload.placa)
     if not placa or len(placa) > 10:
         return _erro(422, "placa_invalida", f"Placa '{payload.placa}' inválida")
