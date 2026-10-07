@@ -38,11 +38,11 @@ export function OrigemCaixaCard({ os, podeConferir, conferindo, onConferir, clas
   ]
 
   return (
-    <div className={`bg-white border border-line border-l-4 border-l-[#E0A100] rounded-lg p-3 ${className}`}>
+    <div className={`bg-nv-surface border border-nv-border border-l-4 border-l-[#FBBF24] rounded-lg p-3 ${className}`}>
       <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
-        <div className="text-[10px] uppercase tracking-wider text-ink-500">Origem · Compra no Caixa Interno</div>
+        <div className="text-[10px] uppercase tracking-wider text-nv-soft">Origem · Compra no Caixa Interno</div>
         {d.link_compra && (
-          <a href={d.link_compra} target="_blank" rel="noopener noreferrer" className="text-xs text-naval hover:underline"
+          <a href={d.link_compra} target="_blank" rel="noopener noreferrer" className="text-xs text-nv-primary hover:underline"
              title="Só abre para quem tem acesso ao Caixa Interno">
             Ver a compra ↗
           </a>
@@ -52,14 +52,14 @@ export function OrigemCaixaCard({ os, podeConferir, conferindo, onConferir, clas
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[12px]">
         {linhas.filter(([, v]) => v).map(([k, v]) => (
           <div key={k} className="contents">
-            <dt className="text-ink-500">{k}</dt>
+            <dt className="text-nv-soft">{k}</dt>
             <dd className="break-words">{v}</dd>
           </div>
         ))}
       </dl>
       {ativa && (
-        <div className="mt-3 pt-3 border-t border-line">
-          <div className="text-[12px] text-ink-500 mb-2">
+        <div className="mt-3 pt-3 border-t border-nv-border">
+          <div className="text-[12px] text-nv-soft mb-2">
             Confira se é manutenção do veículo. <b>Conferido</b> encerra esta OS (sem pedir foto/NF); ou siga o
             atendimento normalmente; ou cancele se não for manutenção.
           </div>
@@ -68,7 +68,7 @@ export function OrigemCaixaCard({ os, podeConferir, conferindo, onConferir, clas
               type="button"
               onClick={onConferir}
               disabled={conferindo}
-              className="bg-success text-white rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-40"
+              className="bg-nv-success text-nv-bg rounded-lg px-4 py-2 text-sm font-semibold disabled:bg-nv-surface-2 disabled:text-nv-soft"
             >
               {conferindo ? 'Enviando…' : '✓ Conferido'}
             </button>

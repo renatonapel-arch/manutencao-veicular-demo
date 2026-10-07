@@ -142,7 +142,7 @@ export default function DetalheOSPage() {
     },
   })
 
-  if (isLoading || !os) return <div className="text-ink-500">Carregando OS #{id}…</div>
+  if (isLoading || !os) return <div className="text-nv-soft">Carregando OS #{id}…</div>
 
   const temNF = (os.anexos || []).some((a: any) => a.tipo === 'nf')
   const temFoto = (os.anexos || []).some((a: any) => a.tipo === 'foto_hodometro' || a.tipo === 'foto_problema')
@@ -158,12 +158,12 @@ export default function DetalheOSPage() {
     <section>
       <div className="flex justify-between items-start mb-3 gap-3">
         <div className="flex items-center gap-3 flex-wrap">
-          <Link to="/os" className="text-ink-400 hover:text-naval">← Voltar</Link>
-          <div className="text-lg font-semibold font-mono text-naval">OS #{os.id}</div>
+          <Link to="/os" className="text-nv-soft hover:text-nv-primary">← Voltar</Link>
+          <div className="text-lg font-semibold font-mono text-nv-primary">OS #{os.id}</div>
           <StatusBadge status={os.status}/>
           <TipoBadge tipo={os.tipo_os}/>
           <OrigemChip os={os}/>
-          <span className="text-xs text-ink-500">Aberta em {fmtDataHora(os.data_abertura)}</span>
+          <span className="text-xs text-nv-soft">Aberta em {fmtDataHora(os.data_abertura)}</span>
         </div>
         <div className="flex gap-2 flex-wrap justify-end">
           <button onClick={() => setModalAlerta(true)} className="btn btn-outline">📲 Alerta WhatsApp</button>
@@ -212,26 +212,26 @@ export default function DetalheOSPage() {
             <div className="kpi-label mb-3">1 · Veículo</div>
             <div className="grid grid-cols-4 gap-3 text-[12px]">
               <div className="col-span-2">
-                <label className="text-[11px] text-ink-500">Veículo</label>
-                <div className="px-2 py-1.5 border border-border-strong rounded bg-ink-50 font-mono font-medium">{os.veiculo?.placa} · {os.veiculo?.modelo}</div>
+                <label className="text-[11px] text-nv-soft">Veículo</label>
+                <div className="px-2 py-1.5 border border-nv-border-strong rounded bg-nv-bg font-mono font-medium">{os.veiculo?.placa} · {os.veiculo?.modelo}</div>
               </div>
               <div>
-                <label className="text-[11px] text-ink-500">Filial</label>
-                <div className="px-2 py-1.5 border border-border-strong rounded bg-ink-50"><FilialChip filialId={os.filial_id}/></div>
+                <label className="text-[11px] text-nv-soft">Filial</label>
+                <div className="px-2 py-1.5 border border-nv-border-strong rounded bg-nv-bg"><FilialChip filialId={os.filial_id}/></div>
               </div>
               <div>
-                <label className="text-[11px] text-ink-500">CRLV</label>
-                <div className="px-2 py-1.5 border border-border-strong rounded bg-ink-50 text-success-fg font-mono">
+                <label className="text-[11px] text-nv-soft">CRLV</label>
+                <div className="px-2 py-1.5 border border-nv-border-strong rounded bg-nv-bg text-nv-success font-mono">
                   {os.veiculo?.vencimento_crlv || '—'} ✓
                 </div>
               </div>
               <div>
-                <label className="text-[11px] text-ink-500">KM API</label>
-                <div className="px-2 py-1.5 border border-border-strong rounded bg-ink-50 text-ink-500 font-mono">{os.km_api_snapshot?.toLocaleString('pt-BR') || '—'}</div>
+                <label className="text-[11px] text-nv-soft">KM API</label>
+                <div className="px-2 py-1.5 border border-nv-border-strong rounded bg-nv-bg text-nv-soft font-mono">{os.km_api_snapshot?.toLocaleString('pt-BR') || '—'}</div>
               </div>
               <div>
-                <label className="text-[11px] text-ink-500">KM lido</label>
-                <div className="px-2 py-1.5 border border-border-strong rounded bg-warn-bg font-mono font-medium">{os.km_veiculo.toLocaleString('pt-BR')}</div>
+                <label className="text-[11px] text-nv-soft">KM lido</label>
+                <div className="px-2 py-1.5 border border-nv-border-strong rounded bg-nv-warn-bg font-mono font-medium">{os.km_veiculo.toLocaleString('pt-BR')}</div>
               </div>
             </div>
           </div>
@@ -250,7 +250,7 @@ export default function DetalheOSPage() {
                 <select
                   value={os.oficina_id || ''}
                   onChange={(e) => patchMut.mutate({ oficina_id: e.target.value ? Number(e.target.value) : null })}
-                  className="w-full px-2 py-1.5 border border-border-strong rounded bg-white text-[13px]"
+                  className="w-full px-2 py-1.5 border border-nv-border-strong rounded bg-nv-surface text-[13px]"
                   disabled={patchMut.isPending}
                 >
                   <option value="">— escolher oficina —</option>
@@ -264,40 +264,40 @@ export default function DetalheOSPage() {
                 {/* Cadastrar oficina nova na hora (#0210) — só admin (bate com o backend) */}
                 {user?.role === 'admin' && (novaOficina === null ? (
                   <button onClick={() => setNovaOficina(NOVA_OFICINA_VAZIA)}
-                          className="mt-2 text-[12px] text-naval hover:underline">
+                          className="mt-2 text-[12px] text-nv-primary hover:underline">
                     + Cadastrar oficina nova
                   </button>
                 ) : (
-                  <div className="mt-3 border-t border-border-strong pt-3 space-y-2">
-                    <div className="text-[11px] text-ink-500">Nova oficina (ex: borracharia)</div>
+                  <div className="mt-3 border-t border-nv-border-strong pt-3 space-y-2">
+                    <div className="text-[11px] text-nv-soft">Nova oficina (ex: borracharia)</div>
                     <input
                       autoFocus placeholder="Nome *"
                       value={novaOficina.nome}
                       onChange={(e) => setNovaOficina({ ...novaOficina, nome: e.target.value })}
-                      className="w-full px-2 py-1.5 border border-border-strong rounded text-[13px]"
+                      className="w-full px-2 py-1.5 border border-nv-border-strong rounded text-[13px]"
                     />
                     <div className="flex gap-2">
                       <input placeholder="Cidade" value={novaOficina.cidade}
                              onChange={(e) => setNovaOficina({ ...novaOficina, cidade: e.target.value })}
-                             className="flex-1 px-2 py-1.5 border border-border-strong rounded text-[13px]" />
+                             className="flex-1 px-2 py-1.5 border border-nv-border-strong rounded text-[13px]" />
                       <input placeholder="UF" maxLength={2} value={novaOficina.uf}
                              onChange={(e) => setNovaOficina({ ...novaOficina, uf: e.target.value })}
-                             className="w-16 px-2 py-1.5 border border-border-strong rounded text-[13px] uppercase" />
+                             className="w-16 px-2 py-1.5 border border-nv-border-strong rounded text-[13px] uppercase" />
                       <input placeholder="Telefone" value={novaOficina.telefone}
                              onChange={(e) => setNovaOficina({ ...novaOficina, telefone: e.target.value })}
-                             className="flex-1 px-2 py-1.5 border border-border-strong rounded text-[13px]" />
+                             className="flex-1 px-2 py-1.5 border border-nv-border-strong rounded text-[13px]" />
                     </div>
                     {criarOficinaMut.isError && (
-                      <div className="text-xs text-err-fg bg-err-bg border border-err rounded px-2 py-1.5">
+                      <div className="text-xs text-nv-danger-text bg-nv-danger-bg border border-nv-danger rounded px-2 py-1.5">
                         {(criarOficinaMut.error as any)?.response?.data?.detail || 'Erro ao cadastrar. Tente de novo.'}
                       </div>
                     )}
                     <div className="flex gap-2 justify-end">
                       <button onClick={() => setNovaOficina(null)} disabled={criarOficinaMut.isPending}
-                              className="border border-border-strong bg-white px-3 py-1.5 rounded text-sm">Cancelar</button>
+                              className="border border-nv-border-strong bg-nv-surface px-3 py-1.5 rounded text-sm">Cancelar</button>
                       <button onClick={() => criarOficinaMut.mutate(novaOficina)}
                               disabled={!novaOficina.nome.trim() || criarOficinaMut.isPending}
-                              className="bg-naval text-white px-3 py-1.5 rounded text-sm font-medium disabled:opacity-40">
+                              className="bg-nv-primary text-nv-bg px-3 py-1.5 rounded text-sm font-medium disabled:bg-nv-surface-2 disabled:text-nv-soft">
                         {criarOficinaMut.isPending ? 'Salvando…' : 'Salvar e selecionar'}
                       </button>
                     </div>
@@ -305,7 +305,7 @@ export default function DetalheOSPage() {
                 ))}
               </>
             ) : (
-              <div className="px-2 py-1.5 border border-border-strong rounded bg-ink-50 font-medium text-[13px]">{os.oficina?.nome || '—'}</div>
+              <div className="px-2 py-1.5 border border-nv-border-strong rounded bg-nv-bg font-medium text-[13px]">{os.oficina?.nome || '—'}</div>
             )}
           </div>
 
@@ -313,7 +313,7 @@ export default function DetalheOSPage() {
           <div className="card p-5">
             <div className="kpi-label mb-3">4 · Itens</div>
             <table className="w-full text-[12px] dense">
-              <thead className="bg-ink-50 text-ink-500 border-y border-border">
+              <thead className="bg-nv-bg text-nv-soft border-y border-nv-border-strong">
                 <tr>
                   <th className="text-left">Tipo</th>
                   <th className="text-left">Descrição</th>
@@ -325,9 +325,9 @@ export default function DetalheOSPage() {
               </thead>
               <tbody>
                 {(os.itens || []).map((it: any) => (
-                  <tr key={it.id} className="border-t border-border">
-                    <td><span className="badge bg-info-bg text-info-fg">{it.tipo_item}</span></td>
-                    <td>{it.descricao}{it.sige_sku && <span className="text-success-fg text-[10px] block">💡 SKU {it.sige_sku}</span>}</td>
+                  <tr key={it.id} className="border-t border-nv-border-strong">
+                    <td><span className="badge bg-nv-info-bg text-nv-info">{it.tipo_item}</span></td>
+                    <td>{it.descricao}{it.sige_sku && <span className="text-nv-success text-[10px] block">💡 SKU {it.sige_sku}</span>}</td>
                     <td className="text-right font-mono">{Number(it.quantidade).toLocaleString('pt-BR')}</td>
                     <td className="text-right font-mono">{fmtBRL(it.valor_unitario)}</td>
                     <td className="text-right font-medium font-mono">{fmtBRL(it.subtotal)}</td>
@@ -336,7 +336,7 @@ export default function DetalheOSPage() {
                         <button
                           onClick={() => delItemMut.mutate(it.id)}
                           disabled={delItemMut.isPending}
-                          className="text-danger hover:text-danger-fg"
+                          className="text-nv-danger-text hover:text-nv-danger-text"
                         >
                           🗑
                         </button>
@@ -345,26 +345,26 @@ export default function DetalheOSPage() {
                   </tr>
                 ))}
                 {!(os.itens || []).length && (
-                  <tr><td colSpan={podeNegociar ? 6 : 5} className="text-center text-ink-400 py-3">Nenhum item lançado ainda</td></tr>
+                  <tr><td colSpan={podeNegociar ? 6 : 5} className="text-center text-nv-soft py-3">Nenhum item lançado ainda</td></tr>
                 )}
               </tbody>
-              <tfoot className="border-t-2 border-border-strong">
-                <tr className="font-semibold bg-ink-50">
+              <tfoot className="border-t-2 border-nv-border-strong">
+                <tr className="font-semibold bg-nv-bg">
                   <td colSpan={4} className="text-right pr-2">Total</td>
-                  <td className="text-right text-base font-mono text-naval">{fmtBRL(os.valor_total)}</td>
+                  <td className="text-right text-base font-mono text-nv-primary">{fmtBRL(os.valor_total)}</td>
                   {podeNegociar && <td></td>}
                 </tr>
               </tfoot>
             </table>
 
             {podeNegociar && (
-              <div className="flex gap-2 items-end mt-3 pt-3 border-t border-border">
+              <div className="flex gap-2 items-end mt-3 pt-3 border-t border-nv-border-strong">
                 <div className="w-24">
-                  <label className="text-[11px] text-ink-500">Tipo</label>
+                  <label className="text-[11px] text-nv-soft">Tipo</label>
                   <select
                     value={novoItem.tipo_item}
                     onChange={(e) => setNovoItem({ ...novoItem, tipo_item: e.target.value })}
-                    className="w-full px-2 py-1.5 border border-border rounded bg-white text-[11px]"
+                    className="w-full px-2 py-1.5 border border-nv-border-strong rounded bg-nv-surface text-[11px]"
                   >
                     <option value="peca">Peça</option>
                     <option value="servico">Serviço</option>
@@ -372,39 +372,39 @@ export default function DetalheOSPage() {
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="text-[11px] text-ink-500">Descrição</label>
+                  <label className="text-[11px] text-nv-soft">Descrição</label>
                   <input
                     type="text"
                     value={novoItem.descricao}
                     onChange={(e) => setNovoItem({ ...novoItem, descricao: e.target.value })}
                     placeholder="Ex: Junta cabeçote / Mão de obra"
-                    className="w-full px-2 py-1.5 border border-border rounded"
+                    className="w-full px-2 py-1.5 border border-nv-border-strong rounded"
                   />
                 </div>
                 <div className="w-20">
-                  <label className="text-[11px] text-ink-500">Qtd</label>
+                  <label className="text-[11px] text-nv-soft">Qtd</label>
                   <input
                     type="number"
                     value={novoItem.quantidade}
                     onChange={(e) => setNovoItem({ ...novoItem, quantidade: Number(e.target.value) })}
-                    className="w-full px-2 py-1.5 border border-border rounded font-mono text-right"
+                    className="w-full px-2 py-1.5 border border-nv-border-strong rounded font-mono text-right"
                     step="0.01"
                   />
                 </div>
                 <div className="w-28">
-                  <label className="text-[11px] text-ink-500">Valor unit.</label>
+                  <label className="text-[11px] text-nv-soft">Valor unit.</label>
                   <input
                     type="number"
                     value={novoItem.valor_unitario}
                     onChange={(e) => setNovoItem({ ...novoItem, valor_unitario: Number(e.target.value) })}
-                    className="w-full px-2 py-1.5 border border-border rounded font-mono text-right"
+                    className="w-full px-2 py-1.5 border border-nv-border-strong rounded font-mono text-right"
                     step="0.01"
                   />
                 </div>
                 <button
                   onClick={() => addItemMut.mutate(novoItem)}
                   disabled={!podeAdicionarItem || addItemMut.isPending}
-                  className={`px-3 py-1.5 rounded text-sm font-medium text-white ${podeAdicionarItem && !addItemMut.isPending ? 'bg-naval hover:bg-noite' : 'bg-ink-300 cursor-not-allowed'}`}
+                  className={`px-3 py-1.5 rounded text-sm font-medium ${podeAdicionarItem && !addItemMut.isPending ? 'bg-nv-primary text-nv-bg hover:bg-nv-primary-hover' : 'bg-nv-surface-2 text-nv-soft cursor-not-allowed'}`}
                 >
                   + Adicionar
                 </button>
@@ -417,15 +417,15 @@ export default function DetalheOSPage() {
             <div className="kpi-label mb-3">5 · Anexos</div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="text-[11px] font-medium mb-1.5">📷 Fotos <span className={temFoto ? 'text-success-fg' : 'text-ink-400'}>({(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).length})</span></div>
+                <div className="text-[11px] font-medium mb-1.5">📷 Fotos <span className={temFoto ? 'text-nv-success' : 'text-nv-soft'}>({(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).length})</span></div>
                 <div className="grid grid-cols-3 gap-1.5">
                   {(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).map((a: any) => (
                     <button key={a.id} type="button" onClick={() => setAnexoAberto(a)}
-                       className="aspect-square rounded border border-border overflow-hidden block hover:opacity-80">
+                       className="aspect-square rounded border border-nv-border-strong overflow-hidden block hover:opacity-80">
                       <img src={a.arquivo_url} alt="Foto anexada" className="w-full h-full object-cover" />
                     </button>
                   ))}
-                  <label className="aspect-square border-2 border-dashed border-border-strong rounded flex flex-col items-center justify-center text-ink-500 text-[10px] cursor-pointer hover:bg-gelo">
+                  <label className="aspect-square border-2 border-dashed border-nv-border-strong rounded flex flex-col items-center justify-center text-nv-soft text-[10px] cursor-pointer hover:bg-nv-surface-2">
                     <span className="text-2xl">+</span>Foto
                     <input type="file" accept="image/*" capture="environment" className="hidden"
                            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMut.mutate({ tipo: 'foto_hodometro', file: f }) }}/>
@@ -433,27 +433,27 @@ export default function DetalheOSPage() {
                 </div>
               </div>
               <div>
-                <div className="text-[11px] font-medium mb-1.5">📄 NF <span className={temNF ? 'text-success-fg' : 'text-danger-fg'}>{temNF ? '✓' : '(obrigatória)'}</span></div>
+                <div className="text-[11px] font-medium mb-1.5">📄 NF <span className={temNF ? 'text-nv-success' : 'text-nv-danger-text'}>{temNF ? '✓' : '(obrigatória)'}</span></div>
                 {temNF && (
                   <button
                     type="button"
                     onClick={() => setAnexoAberto(nfMaisRecente(os.anexos) ?? null)}
-                    className="aspect-[3/1] w-full border-2 rounded flex flex-col items-center justify-center border-success bg-success-bg/30 hover:bg-success-bg/50 mb-1.5"
+                    className="aspect-[3/1] w-full border-2 rounded flex flex-col items-center justify-center border-nv-success bg-nv-success-bg hover:bg-nv-success-bg mb-1.5"
                   >
                     <span className="text-3xl">📄</span>
                     <span className="font-medium text-sm mt-1">Ver NF anexada</span>
                   </button>
                 )}
-                <label className={`${temNF ? 'py-1.5' : 'aspect-[3/1]'} w-full border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer ${temNF ? 'border-border text-ink-500 text-xs' : 'border-danger bg-danger-bg/20'}`}>
+                <label className={`${temNF ? 'py-1.5' : 'aspect-[3/1]'} w-full border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer ${temNF ? 'border-nv-border-strong text-nv-soft text-xs' : 'border-nv-danger bg-nv-danger-bg'}`}>
                   {!temNF && <span className="text-3xl">📄</span>}
                   <span className={`font-medium mt-1 ${temNF ? 'text-xs' : 'text-sm'}`}>{temNF ? 'Substituir NF' : 'Anexar NF'}</span>
-                  {!temNF && <span className="text-[9px] text-ink-400">PDF · JPG · ≤20MB</span>}
+                  {!temNF && <span className="text-[9px] text-nv-soft">PDF · JPG · ≤20MB</span>}
                   <input type="file" accept="image/*,application/pdf" className="hidden"
                          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMut.mutate({ tipo: 'nf', file: f }) }}/>
                 </label>
               </div>
             </div>
-            {uploadMut.isPending && <div className="text-xs text-warn-fg mt-2">⏳ Enviando...</div>}
+            {uploadMut.isPending && <div className="text-xs text-nv-warn mt-2">⏳ Enviando...</div>}
           </div>
         </div>
 
@@ -461,16 +461,16 @@ export default function DetalheOSPage() {
         <div className="card p-5 self-start">
           <div className="kpi-label mb-3">Validação para encerrar</div>
           <div className="space-y-1.5 text-[12px]">
-            <div className={`flex items-center gap-2 ${temFoto ? 'text-success-fg' : 'text-ink-400'}`}>
+            <div className={`flex items-center gap-2 ${temFoto ? 'text-nv-success' : 'text-nv-soft'}`}>
               {temFoto ? '✓' : '✗'} Foto anexada
             </div>
-            <div className={`flex items-center gap-2 ${temNF ? 'text-success-fg' : 'text-danger-fg'}`}>
+            <div className={`flex items-center gap-2 ${temNF ? 'text-nv-success' : 'text-nv-danger-text'}`}>
               {temNF ? '✓' : '✗'} NF/comprovante
             </div>
-            <div className={`flex items-center gap-2 ${(os.itens || []).length > 0 ? 'text-success-fg' : 'text-danger-fg'}`}>
+            <div className={`flex items-center gap-2 ${(os.itens || []).length > 0 ? 'text-nv-success' : 'text-nv-danger-text'}`}>
               {(os.itens || []).length > 0 ? '✓' : '✗'} Pelo menos 1 item
             </div>
-            <div className={`flex items-center gap-2 ${os.km_veiculo > 0 ? 'text-success-fg' : 'text-danger-fg'}`}>
+            <div className={`flex items-center gap-2 ${os.km_veiculo > 0 ? 'text-nv-success' : 'text-nv-danger-text'}`}>
               {os.km_veiculo > 0 ? '✓' : '✗'} KM lido informado
             </div>
           </div>
@@ -480,7 +480,7 @@ export default function DetalheOSPage() {
             </button>
           )}
           {os.motivo_aprovacao && (
-            <div className={`mt-3 text-[11px] rounded px-2 py-1.5 ${os.motivo_aprovacao === 'auto' ? 'bg-info-bg text-info-fg' : 'bg-success-bg text-success-fg'}`}>
+            <div className={`mt-3 text-[11px] rounded px-2 py-1.5 ${os.motivo_aprovacao === 'auto' ? 'bg-nv-info-bg text-nv-info' : 'bg-nv-success-bg text-nv-success'}`}>
               {os.motivo_aprovacao === 'auto' ? '⚡ Auto-aprovada (abaixo do teto)' : '✓ Aprovada manualmente'}
             </div>
           )}
@@ -489,13 +489,13 @@ export default function DetalheOSPage() {
 
       {/* Modal Alerta */}
       {modalAlerta && (
-        <div className="fixed inset-0 bg-noite/50 flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) setModalAlerta(false) }}>
-          <div className="bg-white rounded-lg max-w-lg w-full p-5">
-            <div className="text-lg font-semibold text-naval mb-3">📲 Enviar alerta WhatsApp</div>
+        <div className="fixed inset-0 bg-[rgba(2,15,26,.7)] flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) setModalAlerta(false) }}>
+          <div className="bg-nv-surface ring-1 ring-nv-border-strong rounded-lg max-w-lg w-full p-5">
+            <div className="text-lg font-semibold text-nv-primary mb-3">📲 Enviar alerta WhatsApp</div>
             <div className="mb-3">
-              <label className="text-[11px] text-ink-500">Template</label>
+              <label className="text-[11px] text-nv-soft">Template</label>
               <select value={tipoAlerta} onChange={(e) => setTipoAlerta(e.target.value)}
-                      className="w-full px-2 py-1.5 border border-border-strong rounded bg-white text-sm">
+                      className="w-full px-2 py-1.5 border border-nv-border-strong rounded bg-nv-surface text-sm">
                 <option value="manual">Manual — atualização</option>
                 <option value="os_aberta_dias">OS atrasada (+5d)</option>
                 <option value="preventiva_proxima">Preventiva próxima</option>
@@ -503,13 +503,13 @@ export default function DetalheOSPage() {
                 <option value="custo_fora_padrao">Custo anômalo</option>
               </select>
             </div>
-            <div className="bg-success-bg border border-success rounded p-3 mb-3 text-xs">
-              <div className="text-[10px] uppercase text-success-fg font-medium mb-1">Mock no MVP (EVOLUTION_ENABLED=false)</div>
-              <div className="text-ink-500">A integração real entra na Fase 2 com fila Redis + DLQ.</div>
+            <div className="bg-nv-success-bg border border-nv-success rounded p-3 mb-3 text-xs">
+              <div className="text-[10px] uppercase text-nv-success font-medium mb-1">Mock no MVP (EVOLUTION_ENABLED=false)</div>
+              <div className="text-nv-soft">A integração real entra na Fase 2 com fila Redis + DLQ.</div>
             </div>
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setModalAlerta(false)} className="border border-border-strong bg-white px-3 py-1.5 rounded text-sm">Cancelar</button>
-              <button onClick={() => dispatchMut.mutate()} className="bg-success text-white px-3 py-1.5 rounded text-sm font-medium">Enviar (mock)</button>
+              <button onClick={() => setModalAlerta(false)} className="border border-nv-border-strong bg-nv-surface px-3 py-1.5 rounded text-sm">Cancelar</button>
+              <button onClick={() => dispatchMut.mutate()} className="bg-nv-success text-nv-bg px-3 py-1.5 rounded text-sm font-medium">Enviar (mock)</button>
             </div>
           </div>
         </div>
@@ -517,29 +517,29 @@ export default function DetalheOSPage() {
 
       {/* Modal de motivo (na própria tela — prompt() não funciona no iframe) */}
       {motivoModal && (
-        <div className="fixed inset-0 bg-noite/50 flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget && !transicaoMut.isPending) setMotivoModal(null) }}>
-          <div className="bg-white rounded-lg max-w-md w-full p-5 space-y-3">
-            <div className="text-lg font-semibold text-naval">{MOTIVO_TITULO[motivoModal] || 'Motivo'} · OS #{os.id}</div>
-            <div className="text-[12px] text-ink-500">Informe o motivo (obrigatório):</div>
+        <div className="fixed inset-0 bg-[rgba(2,15,26,.7)] flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget && !transicaoMut.isPending) setMotivoModal(null) }}>
+          <div className="bg-nv-surface ring-1 ring-nv-border-strong rounded-lg max-w-md w-full p-5 space-y-3">
+            <div className="text-lg font-semibold text-nv-primary">{MOTIVO_TITULO[motivoModal] || 'Motivo'} · OS #{os.id}</div>
+            <div className="text-[12px] text-nv-soft">Informe o motivo (obrigatório):</div>
             <textarea
               autoFocus
               value={motivoText}
               onChange={(e) => setMotivoText(e.target.value)}
               rows={3}
               placeholder="Ex.: feito em garantia, duplicado, não autorizado…"
-              className="w-full px-2 py-1.5 border border-border-strong rounded text-sm"
+              className="w-full px-2 py-1.5 border border-nv-border-strong rounded text-sm"
             />
             {transicaoMut.isError && (
-              <div className="text-xs text-err-fg bg-err-bg border border-err rounded px-3 py-2">
+              <div className="text-xs text-nv-danger-text bg-nv-danger-bg border border-nv-danger rounded px-3 py-2">
                 {(transicaoMut.error as any)?.response?.data?.detail || 'Erro. Tente de novo.'}
               </div>
             )}
             <div className="flex gap-2 justify-end pt-1">
               <button onClick={() => setMotivoModal(null)} disabled={transicaoMut.isPending}
-                      className="border border-border-strong bg-white px-3 py-1.5 rounded text-sm">Voltar</button>
+                      className="border border-nv-border-strong bg-nv-surface px-3 py-1.5 rounded text-sm">Voltar</button>
               <button onClick={() => transicaoMut.mutate({ acao: motivoModal, motivo: motivoText.trim() })}
                       disabled={!motivoText.trim() || transicaoMut.isPending}
-                      className="bg-err-fg text-white px-3 py-1.5 rounded text-sm font-medium disabled:opacity-40">
+                      className="bg-nv-danger text-nv-bg px-3 py-1.5 rounded text-sm font-medium disabled:bg-nv-surface-2 disabled:text-nv-soft">
                 {transicaoMut.isPending ? 'Enviando…' : 'Confirmar'}
               </button>
             </div>

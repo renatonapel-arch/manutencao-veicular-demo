@@ -36,10 +36,10 @@ export default function MobileLayout() {
   const podeVoltar = loc.pathname !== '/dashboard' && loc.pathname !== '/'
 
   return (
-    <div className="flex flex-col h-[100svh] w-screen bg-page overflow-hidden">
+    <div className="flex flex-col h-[100svh] w-screen bg-nv-bg text-nv-ink overflow-hidden">
       {/* Header navy */}
       <header
-        className="bg-navy-950 text-white flex-shrink-0 sticky top-0 z-20"
+        className="bg-nv-bar text-nv-ink flex-shrink-0 sticky top-0 z-20"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="flex items-center px-3 py-3 gap-2">
@@ -52,18 +52,18 @@ export default function MobileLayout() {
               <Icon name="chevron-left" size={22} />
             </button>
           ) : (
-            <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-white/10 text-sky-300">
+            <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-nv-surface-2 text-nv-soft">
               <Icon name="wrench" size={18} />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] text-sky-300 uppercase tracking-wider">Clavis · Manutenção</div>
+            <div className="text-[10px] text-nv-soft uppercase tracking-wider">Clavis · Manutenção</div>
             <div className="display font-bold truncate text-[17px]">{titulo}</div>
           </div>
           {!podeVoltar && user && (
             <div className="text-right text-[10px] leading-tight max-w-[110px]">
-              <div className="text-sky-300">Olá,</div>
-              <div className="font-medium text-white truncate">{user.nome.split(' ')[0]}</div>
+              <div className="text-nv-soft">Olá,</div>
+              <div className="font-medium text-nv-ink truncate">{user.nome.split(' ')[0]}</div>
             </div>
           )}
         </div>
@@ -76,7 +76,7 @@ export default function MobileLayout() {
 
       {/* Bottom nav */}
       <nav
-        className="bg-white border-t border-line flex items-stretch fixed bottom-0 left-0 right-0 z-20"
+        className="bg-nv-surface border-t border-nv-border flex items-stretch fixed bottom-0 left-0 right-0 z-20"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {NAV.map(n => (

@@ -10,6 +10,14 @@ export default {
   theme: {
     extend: {
       colors: {
+        nv: {
+          bg: '#042C48', surface: '#0A3450', 'surface-2': '#113C58', border: '#113C58', 'border-strong': '#27557A',
+          ink: '#EBF7FA', soft: '#B5D4E8', faint: '#7DA4C6', muted: '#8DB2CF',
+          primary: '#74A9D7', 'primary-hover': '#B5D4E8', 'primary-active': '#6B9FCE',
+          success: '#34D399', warn: '#FBBF24', danger: '#F87171', info: '#B5D4E8', 'danger-text': '#FCA5A5',
+          'success-bg': 'rgba(52,211,153,.12)', 'warn-bg': 'rgba(251,191,36,.12)', 'danger-bg': 'rgba(248,113,113,.12)', 'info-bg': 'rgba(181,212,232,.12)',
+          bar: '#031F34', control: '#5E88AA',
+        },
         navy: {
           950: '#06283d', 900: '#082E49', 800: '#0A3C5F',
           700: '#0F405F', 500: '#1d6489',

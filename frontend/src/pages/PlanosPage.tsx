@@ -87,12 +87,12 @@ export default function PlanosPage() {
     <section>
       <div className="flex justify-between items-start mb-3">
         <div>
-          <div className="text-lg font-semibold text-naval">Planos preventivos</div>
-          <div className="text-xs text-ink-500">{planos?.length || 0} planos ativos</div>
+          <div className="text-lg font-semibold text-nv-primary">Planos preventivos</div>
+          <div className="text-xs text-nv-soft">{planos?.length || 0} planos ativos</div>
         </div>
         <button
           onClick={() => { setForm(planoVazio); setErroForm(''); setModalAberto(true) }}
-          className="bg-naval text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-noite"
+          className="bg-nv-primary text-nv-bg px-3 py-1.5 rounded text-sm font-medium hover:bg-nv-primary-hover"
         >
           + Novo plano
         </button>
@@ -105,7 +105,7 @@ export default function PlanosPage() {
           cta={
             <button
               onClick={() => { setForm(planoVazio); setErroForm(''); setModalAberto(true) }}
-              className="bg-naval text-white px-4 py-2 rounded text-sm font-medium"
+              className="bg-nv-primary text-nv-bg px-4 py-2 rounded text-sm font-medium hover:bg-nv-primary-hover"
             >
               + Criar primeiro plano
             </button>
@@ -156,7 +156,7 @@ export default function PlanosPage() {
                 render: (p: any) => (
                   <button
                     onClick={(e) => { e.stopPropagation(); onDelete(p.id, p.modelo_veiculo, p.item) }}
-                    className="text-ink-400 hover:text-err-fg px-2 text-xs font-semibold"
+                    className="text-nv-soft hover:text-nv-danger-text px-2 text-xs font-semibold"
                     title="Apagar plano"
                   >
                     Remover
@@ -168,103 +168,103 @@ export default function PlanosPage() {
         </div>
       )}
 
-      <div className="text-[11px] text-ink-500 mt-2">
+      <div className="text-[11px] text-nv-soft mt-2">
         💡 Planos rodam diariamente às 08:00 UTC via APScheduler. Quando km do veículo entra na janela, cria OS preventiva em status <b>aberta</b> e dispara alerta WhatsApp.
       </div>
 
       {/* Modal criar */}
       {modalAberto && (
-        <div className="fixed inset-0 bg-noite/50 flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false) }}>
-          <div className="bg-white rounded-lg max-w-lg w-full p-5">
-            <div className="text-lg font-semibold text-naval mb-3">+ Novo plano preventivo</div>
+        <div className="fixed inset-0 bg-[rgba(2,15,26,.7)] flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false) }}>
+          <div className="bg-nv-surface rounded-lg max-w-lg w-full p-5">
+            <div className="text-lg font-semibold text-nv-primary mb-3">+ Novo plano preventivo</div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] text-ink-500">Modelo do veículo <span className="text-danger">*</span></label>
+                <label className="text-[11px] text-nv-soft">Modelo do veículo <span className="text-nv-danger-text">*</span></label>
                 <select
                   value={form.modelo_veiculo}
                   onChange={(e) => setForm({ ...form, modelo_veiculo: e.target.value })}
-                  className="w-full px-3 py-2 border border-border-strong rounded text-sm bg-white"
+                  className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm bg-nv-surface"
                 >
                   <option value="">— escolha o modelo da frota —</option>
                   {modelosDisponiveis.map(m => (
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
-                <div className="text-[10px] text-ink-500 mt-1">
-                  {modelosDisponiveis.length} modelos distintos cadastrados no Controle Patrimonial · texto livre <b className="text-danger-fg">bloqueado</b>
+                <div className="text-[10px] text-nv-soft mt-1">
+                  {modelosDisponiveis.length} modelos distintos cadastrados no Controle Patrimonial · texto livre <b className="text-nv-danger-text">bloqueado</b>
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] text-ink-500">Item / peça <span className="text-danger">*</span></label>
+                <label className="text-[11px] text-nv-soft">Item / peça <span className="text-nv-danger-text">*</span></label>
                 <input
                   type="text"
                   value={form.item}
                   onChange={(e) => setForm({ ...form, item: e.target.value })}
                   placeholder="Ex: Filtro de ar"
-                  className="w-full px-3 py-2 border border-border-strong rounded text-sm"
+                  className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] text-ink-500">Descrição (opcional)</label>
+                <label className="text-[11px] text-nv-soft">Descrição (opcional)</label>
                 <textarea
                   value={form.descricao}
                   onChange={(e) => setForm({ ...form, descricao: e.target.value })}
                   placeholder="Detalhes do plano..."
-                  className="w-full px-3 py-2 border border-border-strong rounded text-sm h-16"
+                  className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm h-16"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] text-ink-500">Intervalo km</label>
+                  <label className="text-[11px] text-nv-soft">Intervalo km</label>
                   <input
                     type="number"
                     value={form.km_intervalo ?? ''}
                     onChange={(e) => setForm({ ...form, km_intervalo: e.target.value ? Number(e.target.value) : null })}
                     placeholder="Ex: 10000"
-                    className="w-full px-3 py-2 border border-border-strong rounded text-sm font-mono"
+                    className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm font-mono"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-ink-500">Intervalo dias</label>
+                  <label className="text-[11px] text-nv-soft">Intervalo dias</label>
                   <input
                     type="number"
                     value={form.dias_intervalo ?? ''}
                     onChange={(e) => setForm({ ...form, dias_intervalo: e.target.value ? Number(e.target.value) : null })}
                     placeholder="Ex: 365"
-                    className="w-full px-3 py-2 border border-border-strong rounded text-sm font-mono"
+                    className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] text-ink-500">Antecedência do alerta (dias antes do trigger)</label>
+                <label className="text-[11px] text-nv-soft">Antecedência do alerta (dias antes do trigger)</label>
                 <input
                   type="number"
                   value={form.antecedencia_dias}
                   onChange={(e) => setForm({ ...form, antecedencia_dias: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border border-border-strong rounded text-sm font-mono"
+                  className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm font-mono"
                 />
               </div>
 
-              <div className="text-[11px] text-ink-500 bg-gelo border border-ceu-claro rounded p-2">
+              <div className="text-[11px] text-nv-soft bg-nv-surface-2 border border-nv-border-strong rounded p-2">
                 💡 Pelo menos um intervalo (km <b>ou</b> dias) é obrigatório. Pode preencher os dois — o que acontecer primeiro dispara a preventiva.
               </div>
 
               {erroForm && (
-                <div className="bg-danger-bg border border-danger text-danger-fg rounded p-2 text-sm">{erroForm}</div>
+                <div className="bg-nv-danger-bg border border-nv-danger text-nv-danger-text rounded p-2 text-sm">{erroForm}</div>
               )}
             </div>
 
             <div className="flex gap-2 justify-end mt-4">
-              <button onClick={() => setModalAberto(false)} className="border border-border-strong bg-white px-3 py-1.5 rounded text-sm">Cancelar</button>
+              <button onClick={() => setModalAberto(false)} className="border border-nv-border-strong bg-nv-surface px-3 py-1.5 rounded text-sm">Cancelar</button>
               <button
                 onClick={onSalvar}
                 disabled={createMut.isPending}
-                className={`px-3 py-1.5 rounded text-sm font-medium text-white ${createMut.isPending ? 'bg-ink-300' : 'bg-naval hover:bg-noite'}`}
+                className={`px-3 py-1.5 rounded text-sm font-medium ${createMut.isPending ? 'bg-nv-surface-2 text-nv-soft' : 'bg-nv-primary text-nv-bg hover:bg-nv-primary-hover'}`}
               >
                 {createMut.isPending ? 'Salvando...' : 'Criar plano'}
               </button>

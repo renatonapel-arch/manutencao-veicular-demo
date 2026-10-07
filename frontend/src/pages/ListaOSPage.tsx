@@ -57,7 +57,7 @@ export default function ListaOSPage() {
       {/* Toolbar: busca + categoria + Nova OS */}
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="relative flex-1 max-w-md min-w-[220px]">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nv-soft">
             <Icon name="search" size={16} />
           </span>
           <input
@@ -82,7 +82,7 @@ export default function ListaOSPage() {
       </div>
 
       {/* Tabs de status */}
-      <div className="flex flex-wrap items-center border-b border-line gap-1 mb-4 overflow-x-auto">
+      <div className="flex flex-wrap items-center border-b border-nv-border gap-1 mb-4 overflow-x-auto">
         {TABS.map(t => (
           <div
             key={t.v}
@@ -111,7 +111,7 @@ export default function ListaOSPage() {
               accessor: (o: any) => o.id, filter: true,
               render: (o: any) => (
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="font-mono font-semibold text-navy-800">#{o.id}</span>
+                  <span className="font-mono font-semibold text-nv-primary">#{o.id}</span>
                   <OrigemChip os={o} />
                 </span>
               ),
@@ -119,7 +119,7 @@ export default function ListaOSPage() {
             {
               key: 'data_abertura', label: 'Aberta em',
               accessor: (o: any) => o.data_abertura,
-              render: (o: any) => <span className="font-mono text-xs text-ink-500">{fmtData(o.data_abertura)}</span>,
+              render: (o: any) => <span className="font-mono text-xs text-nv-soft">{fmtData(o.data_abertura)}</span>,
             },
             {
               key: 'veiculo', label: 'Veículo',
@@ -130,7 +130,7 @@ export default function ListaOSPage() {
               render: (o: any) => (
                 <>
                   <div className="font-semibold">{o.veiculo_modelo || '—'}</div>
-                  <div className="text-xs text-ink-500 font-mono">{o.veiculo_placa}</div>
+                  <div className="text-xs text-nv-soft font-mono">{o.veiculo_placa}</div>
                 </>
               ),
             },
@@ -144,7 +144,7 @@ export default function ListaOSPage() {
               accessor: (o: any) => o.categoria || '', filter: true,
               render: (o: any) => o.categoria
                 ? <span className="pill pill-sky">{o.categoria}</span>
-                : <span className="text-ink-400">—</span>,
+                : <span className="text-nv-soft">—</span>,
             },
             {
               key: 'tipo_os', label: 'Tipo',
@@ -164,7 +164,7 @@ export default function ListaOSPage() {
             },
           ]}
         />
-        <div className="px-5 py-3 border-t border-line bg-[#F8FBFD] flex items-center justify-between text-xs text-ink-500">
+        <div className="px-5 py-3 border-t border-nv-border bg-nv-surface-2 flex items-center justify-between text-xs text-nv-soft">
           <span>
             {data?.total
               ? `${offset + 1}–${Math.min(offset + limit, data.total)} de ${data.total} ordens`
@@ -172,17 +172,17 @@ export default function ListaOSPage() {
           </span>
           <div className="flex items-center gap-1">
             <button
-              className="w-8 h-8 rounded-lg hover:bg-white flex items-center justify-center disabled:opacity-40"
+              className="w-8 h-8 rounded-lg hover:bg-nv-border-strong flex items-center justify-center disabled:text-nv-faint disabled:hover:bg-transparent disabled:cursor-not-allowed"
               disabled={offset === 0}
               onClick={() => setOffset(Math.max(0, offset - limit))}
             >
               <Icon name="chevron-left" size={14} />
             </button>
-            <span className="px-3 font-mono font-semibold text-navy-800">
+            <span className="px-3 font-mono font-semibold text-nv-primary">
               {Math.floor(offset / limit) + 1}
             </span>
             <button
-              className="w-8 h-8 rounded-lg hover:bg-white flex items-center justify-center disabled:opacity-40"
+              className="w-8 h-8 rounded-lg hover:bg-nv-border-strong flex items-center justify-center disabled:text-nv-faint disabled:hover:bg-transparent disabled:cursor-not-allowed"
               disabled={offset + limit >= (data?.total || 0)}
               onClick={() => setOffset(offset + limit)}
             >

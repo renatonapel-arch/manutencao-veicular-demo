@@ -27,14 +27,14 @@ export default function FrotaPage() {
         <span className="pill pill-sky">
           <Icon name="refresh" size={11} /> Fonte: Cadastro Veicular
         </span>
-        <span className="text-xs text-ink-500">
+        <span className="text-xs text-nv-soft">
           Somente leitura · {veiculos?.length ?? 0} veículos ativos · manutenção não altera a frota
         </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="relative flex-1 max-w-md">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nv-soft">
             <Icon name="search" size={16} />
           </span>
           <input
@@ -57,7 +57,7 @@ export default function FrotaPage() {
             {
               key: 'placa', label: 'Placa',
               accessor: (v: any) => v.placa, filter: true,
-              render: (v: any) => <span className="font-mono font-semibold text-navy-800">{v.placa}</span>,
+              render: (v: any) => <span className="font-mono font-semibold text-nv-primary">{v.placa}</span>,
             },
             {
               key: 'modelo', label: 'Modelo',
@@ -65,7 +65,7 @@ export default function FrotaPage() {
               render: (v: any) => (
                 <>
                   <div className="font-semibold">{v.modelo}</div>
-                  {v.marca && <div className="text-xs text-ink-500">{v.marca}</div>}
+                  {v.marca && <div className="text-xs text-nv-soft">{v.marca}</div>}
                 </>
               ),
             },
@@ -88,7 +88,7 @@ export default function FrotaPage() {
             {
               key: 'vencimento_crlv', label: 'CRLV vence',
               accessor: (v: any) => v.vencimento_crlv || '', filter: true,
-              cellClassName: 'font-mono text-xs text-ink-500',
+              cellClassName: 'font-mono text-xs text-nv-soft',
               render: (v: any) => v.vencimento_crlv || '—',
             },
           ]}

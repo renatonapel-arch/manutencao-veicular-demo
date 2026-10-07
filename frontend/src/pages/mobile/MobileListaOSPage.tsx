@@ -36,7 +36,7 @@ export default function MobileListaOSPage() {
   return (
     <section className="flex flex-col h-full">
       {/* Chips de filtro (scroll horizontal sem barra) */}
-      <div className="bg-white border-b border-line px-3 py-2.5 sticky top-0 z-10">
+      <div className="bg-nv-surface border-b border-nv-border px-3 py-2.5 sticky top-0 z-10">
         <div className="chip-scroll flex gap-2 -mx-1 px-1">
           {STATUS.map(s => (
             <button
@@ -44,15 +44,15 @@ export default function MobileListaOSPage() {
               onClick={() => setStatusF(s.v)}
               className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-semibold border transition-colors ${
                 statusF === s.v
-                  ? 'bg-navy-900 text-white border-navy-900'
-                  : 'bg-white text-ink-700 border-line'
+                  ? 'bg-nv-primary text-nv-bg border-nv-primary'
+                  : 'bg-nv-surface text-nv-soft border-nv-border'
               }`}
             >
               {s.l}
             </button>
           ))}
         </div>
-        <div className="text-[11px] text-ink-500 mt-1.5 px-1">
+        <div className="text-[11px] text-nv-soft mt-1.5 px-1">
           {data?.total ?? '—'} OS{statusF ? ` · filtro ativo` : ''}
         </div>
       </div>
@@ -64,28 +64,28 @@ export default function MobileListaOSPage() {
             <Link
               key={os.id}
               to={`/os/${os.id}`}
-              className="block card-m active:bg-sky-bg/40"
+              className="block card-m active:bg-nv-surface-2"
             >
               <div className="flex justify-between items-start gap-2 mb-1.5">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-mono text-navy-800 font-semibold text-sm">#{os.id}</span>
+                  <span className="font-mono text-nv-primary font-semibold text-sm">#{os.id}</span>
                   <StatusBadge status={os.status} />
                   <FilialChip filialId={os.filial_id} />
                   <OrigemChip os={os} />
                 </div>
-                <div className="font-semibold font-mono num text-sm text-navy-900 shrink-0">
+                <div className="font-semibold font-mono num text-sm text-nv-ink shrink-0">
                   {fmtBRL(os.valor_total)}
                 </div>
               </div>
               <div className="font-semibold text-sm truncate">
-                {os.veiculo_placa} <span className="text-ink-500 font-normal">· {os.veiculo_modelo || '—'}</span>
+                {os.veiculo_placa} <span className="text-nv-soft font-normal">· {os.veiculo_modelo || '—'}</span>
               </div>
               {os.oficina_nome && (
-                <div className="text-[11px] text-ink-500 mt-1 flex items-center gap-1">
+                <div className="text-[11px] text-nv-soft mt-1 flex items-center gap-1">
                   <Icon name="store" size={11} /> {os.oficina_nome}
                 </div>
               )}
-              <div className="flex justify-between items-center mt-1.5 text-[11px] text-ink-500 gap-2">
+              <div className="flex justify-between items-center mt-1.5 text-[11px] text-nv-soft gap-2">
                 <span className="truncate flex-1">{os.descricao_problema || '—'}</span>
                 <span className="font-mono shrink-0">{fmtData(os.data_abertura)}</span>
               </div>

@@ -30,21 +30,21 @@ export default function AlertasPage() {
     <section>
       <div className="flex justify-between items-start mb-3">
         <div>
-          <div className="text-lg font-semibold text-naval">Alertas WhatsApp</div>
-          <div className="text-xs text-ink-500">Histórico Evolution + envio manual · DLQ monitorada</div>
+          <div className="text-lg font-semibold text-nv-primary">Alertas WhatsApp</div>
+          <div className="text-xs text-nv-soft">Histórico Evolution + envio manual · DLQ monitorada</div>
         </div>
       </div>
 
       <div className="grid grid-cols-4 gap-3 mb-3">
-        <div className="kpi-card"><div className="text-[10px] uppercase text-ink-500">Enviados hoje</div><div className="text-xl font-semibold font-mono">{stats?.enviados_hoje ?? 0}</div></div>
-        <div className="kpi-card"><div className="text-[10px] uppercase text-ink-500">Pendentes</div><div className="text-xl font-semibold font-mono text-warn-fg">{stats?.pendentes ?? 0}</div></div>
-        <div className="kpi-card"><div className="text-[10px] uppercase text-ink-500">Falhas (24h)</div><div className="text-xl font-semibold font-mono text-danger-fg">{stats?.falhas_24h ?? 0}</div></div>
-        <div className="kpi-card border-danger"><div className="text-[10px] uppercase text-danger-fg">DLQ</div><div className={`text-xl font-semibold font-mono ${(stats?.dlq ?? 0) === 0 ? 'text-success-fg' : 'text-danger-fg'}`}>{stats?.dlq ?? 0}</div></div>
+        <div className="kpi-card"><div className="text-[10px] uppercase text-nv-soft">Enviados hoje</div><div className="text-xl font-semibold font-mono">{stats?.enviados_hoje ?? 0}</div></div>
+        <div className="kpi-card"><div className="text-[10px] uppercase text-nv-soft">Pendentes</div><div className="text-xl font-semibold font-mono text-nv-warn">{stats?.pendentes ?? 0}</div></div>
+        <div className="kpi-card"><div className="text-[10px] uppercase text-nv-soft">Falhas (24h)</div><div className="text-xl font-semibold font-mono text-nv-danger-text">{stats?.falhas_24h ?? 0}</div></div>
+        <div className="kpi-card border-nv-danger"><div className="text-[10px] uppercase text-nv-danger-text">DLQ</div><div className={`text-xl font-semibold font-mono ${(stats?.dlq ?? 0) === 0 ? 'text-nv-success' : 'text-nv-danger-text'}`}>{stats?.dlq ?? 0}</div></div>
       </div>
 
-      <div className="bg-white border border-border rounded p-3 mb-3">
+      <div className="bg-nv-surface border border-nv-border-strong rounded p-3 mb-3">
         <select value={statusFiltro} onChange={(e) => setStatusFiltro(e.target.value)}
-                className="border border-border-strong rounded px-2 py-1 bg-white text-xs">
+                className="border border-nv-border-strong rounded px-2 py-1 bg-nv-surface text-xs">
           <option value="">Status: todos</option>
           <option value="sent">Enviado</option>
           <option value="pending">Pendente</option>
@@ -57,7 +57,7 @@ export default function AlertasPage() {
         <EmptyState
           titulo="Nada na fila de mortos"
           descricao="Nenhum alerta foi para DLQ — todos os envios entregues ou em retry saudável. Esse é o bom estado vazio."
-          cta={<button onClick={() => setStatusFiltro('')} className="text-xs text-naval underline">Voltar à listagem</button>}
+          cta={<button onClick={() => setStatusFiltro('')} className="text-xs text-nv-primary underline">Voltar à listagem</button>}
         />
       ) : (
         <div className="card overflow-hidden">

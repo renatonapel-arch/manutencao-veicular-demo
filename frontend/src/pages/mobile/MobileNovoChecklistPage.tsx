@@ -93,7 +93,7 @@ export default function MobileNovoChecklistPage() {
           <div className="grid grid-cols-2 gap-3 mt-3">
             <div>
               <div className="kpi-label mb-1">KM atual</div>
-              <div className="font-mono num text-sm text-navy-800">{fmtKm(veic.km_atual)}</div>
+              <div className="font-mono num text-sm text-nv-primary">{fmtKm(veic.km_atual)}</div>
             </div>
             <div>
               <div className="kpi-label mb-1">KM lido agora *</div>
@@ -101,7 +101,7 @@ export default function MobileNovoChecklistPage() {
                 type="number"
                 value={km}
                 onChange={(e) => setKm(Number(e.target.value))}
-                className="input font-mono text-navy-800"
+                className="input font-mono text-nv-primary"
                 min={veic.km_atual || 0}
               />
             </div>
@@ -114,13 +114,13 @@ export default function MobileNovoChecklistPage() {
           <div className="flex items-center justify-between mb-3">
             <div className="kpi-label">Checklist {tipo}</div>
             <div className="text-xs">
-              <span className="text-ok-fg font-semibold">{n_ok} OK</span>
-              <span className="mx-1 text-ink-400">·</span>
-              <span className="text-err-fg font-semibold">{n_prob} problema{n_prob !== 1 ? 's' : ''}</span>
+              <span className="text-nv-success font-semibold">{n_ok} OK</span>
+              <span className="mx-1 text-nv-soft">·</span>
+              <span className="text-nv-danger-text font-semibold">{n_prob} problema{n_prob !== 1 ? 's' : ''}</span>
               {n_pendente > 0 && (
                 <>
-                  <span className="mx-1 text-ink-400">·</span>
-                  <span className="text-warn-fg font-semibold">{n_pendente} pendente{n_pendente !== 1 ? 's' : ''}</span>
+                  <span className="mx-1 text-nv-soft">·</span>
+                  <span className="text-nv-warn font-semibold">{n_pendente} pendente{n_pendente !== 1 ? 's' : ''}</span>
                 </>
               )}
             </div>
@@ -130,14 +130,14 @@ export default function MobileNovoChecklistPage() {
             {itens.map(item => {
               const s = status[item]
               return (
-                <div key={item} className="border border-line rounded-xl p-3 space-y-2">
+                <div key={item} className="border border-nv-border rounded-xl p-3 space-y-2">
                   <div className="text-sm font-medium leading-snug">{item}</div>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => marcar(item, 'OK')}
                       className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${
-                        s === 'OK' ? 'bg-ok text-white' : 'bg-ok-bg/40 text-ok-fg border border-ok'
+                        s === 'OK' ? 'bg-nv-success text-nv-bg' : 'bg-nv-success-bg text-nv-success border border-nv-success'
                       }`}
                     >
                       OK
@@ -146,7 +146,7 @@ export default function MobileNovoChecklistPage() {
                       type="button"
                       onClick={() => marcar(item, 'PROBLEMA')}
                       className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${
-                        s === 'PROBLEMA' ? 'bg-err text-white' : 'bg-err-bg/40 text-err-fg border border-err'
+                        s === 'PROBLEMA' ? 'bg-nv-danger text-nv-bg' : 'bg-nv-danger-bg text-nv-danger-text border border-nv-danger'
                       }`}
                     >
                       PROBLEMA
@@ -172,7 +172,7 @@ export default function MobileNovoChecklistPage() {
       {veic && (
         <>
           {n_prob > 0 && (
-            <div className="bg-warn-bg border border-warn rounded-xl p-3 text-xs text-warn-fg flex gap-2">
+            <div className="bg-nv-warn-bg border border-nv-warn rounded-xl p-3 text-xs text-nv-warn flex gap-2">
               <Icon name="alert" size={16} />
               <div>
                 <b>{n_prob} OS ser{n_prob === 1 ? 'á aberta' : 'ão abertas'}</b> automaticamente
@@ -185,14 +185,14 @@ export default function MobileNovoChecklistPage() {
           <button
             onClick={() => submit.mutate()}
             disabled={!podeEnviar || submit.isPending}
-            className="btn btn-primary btn-lg w-full justify-center disabled:opacity-40"
+            className="btn btn-primary btn-lg w-full justify-center"
           >
             <Icon name="check" size={16} />
             {submit.isPending ? 'Enviando…' : 'Enviar checklist'}
           </button>
 
           {!podeEnviar && n_pendente > 0 && (
-            <div className="text-xs text-ink-500 text-center">
+            <div className="text-xs text-nv-soft text-center">
               Marque todos os itens como OK ou PROBLEMA antes de enviar.
             </div>
           )}

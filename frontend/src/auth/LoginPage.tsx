@@ -43,19 +43,19 @@ export default function LoginPage() {
     }
   }
 
-  if (loginLocal === null) return <div className="min-h-screen bg-noite" />
+  if (loginLocal === null) return <div className="min-h-screen bg-nv-bg" />
 
   if (!loginLocal) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-noite p-4">
-        <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8 text-center space-y-4">
-          <div className="text-xs tracking-widest text-ink-500">CLAVIS · NAPEL</div>
-          <h1 className="text-2xl font-bold text-naval">Manutenção Veicular</h1>
-          <p className="text-sm text-ink-500">
+      <div className="min-h-screen flex items-center justify-center bg-nv-bg p-4">
+        <div className="bg-nv-surface rounded-xl shadow-lg w-full max-w-md p-8 text-center space-y-4">
+          <div className="text-xs tracking-widest text-nv-soft">CLAVIS · NAPEL</div>
+          <h1 className="text-2xl font-bold text-nv-ink">Manutenção Veicular</h1>
+          <p className="text-sm text-nv-soft">
             O acesso é pelo Clavis. Abra o Clavis, entre com o seu usuário e vá em Patrimônio › Manutenção Veicular.
           </p>
           <a href={CLAVIS_URL} target="_blank" rel="noreferrer"
-             className="inline-block w-full bg-naval text-white py-2.5 rounded font-medium hover:bg-noite">
+             className="inline-block w-full bg-nv-primary text-nv-bg py-2.5 rounded font-medium hover:bg-nv-primary-hover">
             Abrir o Clavis
           </a>
         </div>
@@ -64,60 +64,60 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-noite p-4">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-8">
+    <div className="min-h-screen flex items-center justify-center bg-nv-bg p-4">
+      <div className="bg-nv-surface rounded-xl shadow-lg w-full max-w-md p-8">
         <div className="text-center mb-6">
-          <div className="text-xs tracking-widest text-ink-500">CLAVIS · NAPEL</div>
-          <h1 className="text-2xl font-bold text-naval mt-1">Manutenção Veicular</h1>
-          <div className="text-xs text-ink-500 mt-1">Demo VPS · DS Napel v1.0</div>
+          <div className="text-xs tracking-widest text-nv-soft">CLAVIS · NAPEL</div>
+          <h1 className="text-2xl font-bold text-nv-ink mt-1">Manutenção Veicular</h1>
+          <div className="text-xs text-nv-soft mt-1">Demo VPS · DS Napel v1.0</div>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-3">
           <div>
-            <label className="text-[11px] text-ink-500">Email</label>
+            <label className="text-[11px] text-nv-soft">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-border-strong rounded text-sm font-mono"
+              className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm font-mono"
               required
               autoFocus
             />
           </div>
           <div>
-            <label className="text-[11px] text-ink-500">Senha</label>
+            <label className="text-[11px] text-nv-soft">Senha</label>
             <input
               type="password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className="w-full px-3 py-2 border border-border-strong rounded text-sm font-mono"
+              className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm font-mono"
               required
             />
           </div>
           {erro && (
-            <div className="bg-danger-bg border border-danger text-danger-fg text-sm rounded p-2">{erro}</div>
+            <div className="bg-nv-danger-bg border border-nv-danger text-nv-danger-text text-sm rounded p-2">{erro}</div>
           )}
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-naval text-white py-2.5 rounded font-medium hover:bg-noite disabled:opacity-50"
+            className="w-full bg-nv-primary text-nv-bg py-2.5 rounded font-medium hover:bg-nv-primary-hover disabled:bg-nv-surface-2 disabled:text-nv-soft"
           >
             {submitting ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-border">
-          <div className="text-[10px] uppercase tracking-wider text-ink-500 mb-2">Usuários seed (senha: password123)</div>
+        <div className="mt-6 pt-4 border-t border-nv-border-strong">
+          <div className="text-[10px] uppercase tracking-wider text-nv-soft mb-2">Usuários seed (senha: password123)</div>
           <div className="space-y-1">
             {USUARIOS_DEMO.map(u => (
               <button
                 key={u.email}
                 type="button"
                 onClick={() => { setEmail(u.email); setSenha('password123') }}
-                className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-gelo flex justify-between"
+                className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-nv-surface-2 flex justify-between"
               >
-                <span className="font-mono text-ink-700">{u.email}</span>
-                <span className="text-ink-500">{u.role}</span>
+                <span className="font-mono text-nv-soft">{u.email}</span>
+                <span className="text-nv-soft">{u.role}</span>
               </button>
             ))}
           </div>

@@ -51,11 +51,11 @@ export default function AnexoViewer({ anexo, onClose }: { anexo: AnexoVisual | n
   // empurrava o overlay 12px pra baixo e deixava uma faixa descoberta no topo).
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-noite/90 overscroll-contain"
+      className="fixed inset-0 z-50 flex flex-col bg-[rgba(2,15,26,.92)] overscroll-contain"
       role="dialog" aria-modal="true" aria-label={`Anexo ${nome}`}
       onClick={onClose}
     >
-      <div className="flex items-center justify-between gap-3 px-4 py-2 text-white text-sm" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center justify-between gap-3 px-4 py-2 text-nv-ink text-sm" onClick={(e) => e.stopPropagation()}>
         <span className="truncate">{nome}</span>
         <div className="flex items-center gap-4 shrink-0">
           {!pdf && !falhou && <a href={anexo.arquivo_url} download={nome} className="underline">Baixar</a>}
@@ -65,14 +65,14 @@ export default function AnexoViewer({ anexo, onClose }: { anexo: AnexoVisual | n
 
       <div className={`flex-1 min-h-0 p-2 ${zoom ? 'overflow-auto' : 'flex items-center justify-center'}`}>
         {falhou ? (
-          <div className="bg-white rounded-lg p-5 max-w-sm text-center text-sm" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-nv-surface rounded-lg p-5 max-w-sm text-center text-sm" onClick={(e) => e.stopPropagation()}>
             Este arquivo não está mais disponível no servidor. Anexe de novo, se precisar.
           </div>
         ) : pdf ? (
-          <div className="bg-white rounded-lg p-5 max-w-sm text-center text-sm space-y-3" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-nv-surface rounded-lg p-5 max-w-sm text-center text-sm space-y-3" onClick={(e) => e.stopPropagation()}>
             <div className="text-3xl">📄</div>
             <div>PDF não abre dentro desta tela.</div>
-            <a href={anexo.arquivo_url} download={nome} className="inline-block bg-naval text-white px-4 py-2 rounded font-medium">Baixar PDF</a>
+            <a href={anexo.arquivo_url} download={nome} className="inline-block bg-nv-primary text-nv-bg px-4 py-2 rounded font-medium">Baixar PDF</a>
           </div>
         ) : (
           <img
