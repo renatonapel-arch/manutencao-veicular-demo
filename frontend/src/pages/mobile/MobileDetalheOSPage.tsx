@@ -17,13 +17,13 @@ import { OrigemCaixaCard, OrigemChip } from '../../components/OrigemCaixa'
  */
 
 const PROX_ACOES: Record<string, { acao: string; label: string; cor: string }> = {
-  rascunho:              { acao: 'abrir',              label: 'Enviar OS',              cor: 'bg-naval text-white' },
-  aberta:                { acao: 'triagem',            label: 'Iniciar triagem',        cor: 'bg-naval text-white' },
-  em_triagem:            { acao: 'enviar-orcamento',   label: 'Pedir orçamento',        cor: 'bg-naval text-white' },
-  aguardando_orcamento:  { acao: 'submeter-orcamento', label: 'Submeter orçamento',     cor: 'bg-naval text-white' },
-  aguardando_aprovacao:  { acao: 'aprovar',            label: 'Aprovar orçamento',      cor: 'bg-success text-white' },
-  em_execucao:           { acao: 'encerrar',           label: 'Encerrar OS',            cor: 'bg-success text-white' },
-  aguardando_peca:       { acao: 'retomar-execucao',   label: 'Peça chegou · retomar',  cor: 'bg-naval text-white' },
+  rascunho:              { acao: 'abrir',              label: 'Enviar OS',              cor: 'bg-nv-primary text-nv-bg' },
+  aberta:                { acao: 'triagem',            label: 'Iniciar triagem',        cor: 'bg-nv-primary text-nv-bg' },
+  em_triagem:            { acao: 'enviar-orcamento',   label: 'Pedir orçamento',        cor: 'bg-nv-primary text-nv-bg' },
+  aguardando_orcamento:  { acao: 'submeter-orcamento', label: 'Submeter orçamento',     cor: 'bg-nv-primary text-nv-bg' },
+  aguardando_aprovacao:  { acao: 'aprovar',            label: 'Aprovar orçamento',      cor: 'bg-nv-success text-nv-bg' },
+  em_execucao:           { acao: 'encerrar',           label: 'Encerrar OS',            cor: 'bg-nv-success text-nv-bg' },
+  aguardando_peca:       { acao: 'retomar-execucao',   label: 'Peça chegou · retomar',  cor: 'bg-nv-primary text-nv-bg' },
 }
 
 const NOVO_ITEM_VAZIO = { tipo_item: 'peca', descricao: '', quantidade: 1, valor_unitario: 0 }
@@ -130,7 +130,7 @@ export default function MobileDetalheOSPage() {
     onError: (e: any) => alert(e.response?.data?.detail || 'Erro upload'),
   })
 
-  if (isLoading || !os) return <div className="p-6 text-ink-500 text-center">Carregando OS…</div>
+  if (isLoading || !os) return <div className="p-6 text-nv-soft text-center">Carregando OS…</div>
 
   const temNF   = (os.anexos || []).some((a: any) => a.tipo === 'nf')
   const temFoto = (os.anexos || []).some((a: any) => a.tipo?.startsWith('foto'))
@@ -147,9 +147,9 @@ export default function MobileDetalheOSPage() {
   return (
     <section className="px-3 py-3 space-y-3">
       {/* Header */}
-      <div className="bg-white border border-line rounded-lg p-3">
+      <div className="bg-nv-surface border border-nv-border rounded-lg p-3">
         <div className="flex items-center gap-2 flex-wrap mb-2">
-          <span className="font-mono text-lg font-semibold text-navy-800">OS #{os.id}</span>
+          <span className="font-mono text-lg font-semibold text-nv-primary">OS #{os.id}</span>
           <StatusBadge status={os.status} />
           <TipoBadge tipo={os.tipo_os} />
           <OrigemChip os={os} />
@@ -157,7 +157,7 @@ export default function MobileDetalheOSPage() {
         <div className="font-mono text-base font-medium">
           {os.veiculo?.placa} · {os.veiculo?.modelo}
         </div>
-        <div className="text-xs text-ink-500 mt-1 flex items-center gap-2 flex-wrap">
+        <div className="text-xs text-nv-soft mt-1 flex items-center gap-2 flex-wrap">
           <FilialChip filialId={os.filial_id} />
           <span>KM {os.km_veiculo?.toLocaleString('pt-BR')}</span>
           <span>· {fmtDataHora(os.data_abertura)}</span>
@@ -170,21 +170,21 @@ export default function MobileDetalheOSPage() {
 
       {/* Descrição */}
       {os.descricao_problema && (
-        <div className="bg-white border border-line rounded-lg p-3">
-          <div className="text-[10px] uppercase tracking-wider text-ink-500 mb-1">Problema</div>
+        <div className="bg-nv-surface border border-nv-border rounded-lg p-3">
+          <div className="text-[10px] uppercase tracking-wider text-nv-soft mb-1">Problema</div>
           <div className="text-[13px]">{os.descricao_problema}</div>
         </div>
       )}
 
       {/* Oficina — editável enquanto a OS não fechou (negociação do gestor) */}
-      <div className="bg-white border border-line rounded-lg p-3">
-        <div className="text-[10px] uppercase tracking-wider text-ink-500 mb-1">Oficina</div>
+      <div className="bg-nv-surface border border-nv-border rounded-lg p-3">
+        <div className="text-[10px] uppercase tracking-wider text-nv-soft mb-1">Oficina</div>
         {podeNegociar ? (
           <>
             <select
               value={os.oficina_id || ''}
               onChange={(e) => patchMut.mutate({ oficina_id: e.target.value ? Number(e.target.value) : null })}
-              className="w-full px-3 py-2.5 border border-line rounded-lg bg-white text-sm"
+              className="w-full px-3 py-2.5 border border-nv-border rounded-lg bg-nv-surface text-sm"
               disabled={patchMut.isPending}
             >
               <option value="">— escolher oficina —</option>
@@ -196,37 +196,37 @@ export default function MobileDetalheOSPage() {
             {/* Cadastrar oficina nova na hora (#0210) — só admin (bate com o backend) */}
             {user?.role === 'admin' && (novaOficina === null ? (
               <button onClick={() => setNovaOficina(NOVA_OFICINA_VAZIA)}
-                      className="mt-2 text-[13px] text-naval">
+                      className="mt-2 text-[13px] text-nv-primary">
                 + Cadastrar oficina nova
               </button>
             ) : (
-              <div className="mt-3 pt-3 border-t border-line space-y-2">
-                <div className="text-[11px] text-ink-500">Nova oficina (ex: borracharia)</div>
+              <div className="mt-3 pt-3 border-t border-nv-border space-y-2">
+                <div className="text-[11px] text-nv-soft">Nova oficina (ex: borracharia)</div>
                 <input autoFocus placeholder="Nome *" value={novaOficina.nome}
                        onChange={(e) => setNovaOficina({ ...novaOficina, nome: e.target.value })}
-                       className="w-full px-3 py-2 border border-line rounded-lg text-sm" />
+                       className="w-full px-3 py-2 border border-nv-border rounded-lg text-sm" />
                 <div className="flex gap-2">
                   <input placeholder="Cidade" value={novaOficina.cidade}
                          onChange={(e) => setNovaOficina({ ...novaOficina, cidade: e.target.value })}
-                         className="flex-1 px-3 py-2 border border-line rounded-lg text-sm" />
+                         className="flex-1 px-3 py-2 border border-nv-border rounded-lg text-sm" />
                   <input placeholder="UF" maxLength={2} value={novaOficina.uf}
                          onChange={(e) => setNovaOficina({ ...novaOficina, uf: e.target.value })}
-                         className="w-16 px-2 py-2 border border-line rounded-lg text-sm uppercase" />
+                         className="w-16 px-2 py-2 border border-nv-border rounded-lg text-sm uppercase" />
                 </div>
                 <input placeholder="Telefone" value={novaOficina.telefone}
                        onChange={(e) => setNovaOficina({ ...novaOficina, telefone: e.target.value })}
-                       className="w-full px-3 py-2 border border-line rounded-lg text-sm" />
+                       className="w-full px-3 py-2 border border-nv-border rounded-lg text-sm" />
                 {criarOficinaMut.isError && (
-                  <div className="text-xs text-err-fg bg-err-bg border border-err rounded-lg px-3 py-2">
+                  <div className="text-xs text-nv-danger-text bg-nv-danger-bg border border-nv-danger rounded-lg px-3 py-2">
                     {(criarOficinaMut.error as any)?.response?.data?.detail || 'Erro ao cadastrar. Tente de novo.'}
                   </div>
                 )}
                 <div className="flex gap-2">
                   <button onClick={() => setNovaOficina(null)} disabled={criarOficinaMut.isPending}
-                          className="flex-1 border border-line rounded-lg py-2 text-sm text-ink-500">Cancelar</button>
+                          className="flex-1 border border-nv-border rounded-lg py-2 text-sm text-nv-soft">Cancelar</button>
                   <button onClick={() => criarOficinaMut.mutate(novaOficina)}
                           disabled={!novaOficina.nome.trim() || criarOficinaMut.isPending}
-                          className={`flex-1 rounded-lg py-2 text-sm font-medium text-white ${novaOficina.nome.trim() && !criarOficinaMut.isPending ? 'bg-naval' : 'bg-ink-300'}`}>
+                          className={`flex-1 rounded-lg py-2 text-sm font-medium ${novaOficina.nome.trim() && !criarOficinaMut.isPending ? 'bg-nv-primary text-nv-bg' : 'bg-nv-surface-2 text-nv-soft'}`}>
                     {criarOficinaMut.isPending ? 'Salvando…' : 'Salvar e selecionar'}
                   </button>
                 </div>
@@ -239,12 +239,12 @@ export default function MobileDetalheOSPage() {
       </div>
 
       {/* Itens */}
-      <div className="bg-white border border-line rounded-lg overflow-hidden">
-        <div className="px-3 py-2 border-b border-line bg-sky-bg text-[10px] uppercase tracking-wider text-ink-500">
+      <div className="bg-nv-surface border border-nv-border rounded-lg overflow-hidden">
+        <div className="px-3 py-2 border-b border-nv-border bg-nv-surface-2 text-[10px] uppercase tracking-wider text-nv-soft">
           Itens · {(os.itens || []).length}
         </div>
         {(os.itens || []).map((it: any) => (
-          <div key={it.id} className="px-3 py-2 border-b border-line last:border-b-0 flex justify-between items-start gap-2">
+          <div key={it.id} className="px-3 py-2 border-b border-nv-border last:border-b-0 flex justify-between items-start gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="pill pill-sky">{it.tipo_item}</span>
@@ -253,14 +253,14 @@ export default function MobileDetalheOSPage() {
             </div>
             <div className="text-right flex-shrink-0 flex items-start gap-2">
               <div>
-                <div className="text-[10px] text-ink-500 font-mono">{Number(it.quantidade)}×</div>
+                <div className="text-[10px] text-nv-soft font-mono">{Number(it.quantidade)}×</div>
                 <div className="font-mono font-medium num">{fmtBRL(it.subtotal)}</div>
               </div>
               {podeNegociar && (
                 <button
                   onClick={() => delItemMut.mutate(it.id)}
                   disabled={delItemMut.isPending}
-                  className="text-err-fg text-xs px-1"
+                  className="text-nv-danger-text text-xs px-1"
                 >
                   ✕
                 </button>
@@ -268,17 +268,17 @@ export default function MobileDetalheOSPage() {
             </div>
           </div>
         ))}
-        <div className="px-3 py-2 bg-sky-bg flex justify-between items-center font-semibold border-t border-line">
-          <span className="text-xs uppercase text-ink-500">Total</span>
-          <span className="font-mono text-base text-navy-800 num">{fmtBRL(os.valor_total)}</span>
+        <div className="px-3 py-2 bg-nv-surface-2 flex justify-between items-center font-semibold border-t border-nv-border">
+          <span className="text-xs uppercase text-nv-soft">Total</span>
+          <span className="font-mono text-base text-nv-primary num">{fmtBRL(os.valor_total)}</span>
         </div>
 
         {podeNegociar && (
-          <div className="p-3 border-t border-line">
+          <div className="p-3 border-t border-nv-border">
             {!mostrarForm ? (
               <button
                 onClick={() => setMostrarForm(true)}
-                className="w-full border-2 border-dashed border-line rounded-lg py-2.5 text-sm font-medium text-navy-800 active:bg-sky-bg"
+                className="w-full border-2 border-dashed border-nv-border rounded-lg py-2.5 text-sm font-medium text-nv-primary active:bg-nv-surface-2"
               >
                 + Adicionar item
               </button>
@@ -288,7 +288,7 @@ export default function MobileDetalheOSPage() {
                   <select
                     value={novoItem.tipo_item}
                     onChange={(e) => setNovoItem({ ...novoItem, tipo_item: e.target.value })}
-                    className="px-2 py-2 border border-line rounded-lg bg-white text-xs"
+                    className="px-2 py-2 border border-nv-border rounded-lg bg-nv-surface text-xs"
                   >
                     <option value="peca">Peça</option>
                     <option value="servico">Serviço</option>
@@ -299,7 +299,7 @@ export default function MobileDetalheOSPage() {
                     placeholder="Descrição"
                     value={novoItem.descricao}
                     onChange={(e) => setNovoItem({ ...novoItem, descricao: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-line rounded-lg text-sm"
+                    className="flex-1 px-3 py-2 border border-nv-border rounded-lg text-sm"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -308,7 +308,7 @@ export default function MobileDetalheOSPage() {
                     placeholder="Qtd"
                     value={novoItem.quantidade}
                     onChange={(e) => setNovoItem({ ...novoItem, quantidade: Number(e.target.value) })}
-                    className="w-20 px-2 py-2 border border-line rounded-lg font-mono text-right text-sm"
+                    className="w-20 px-2 py-2 border border-nv-border rounded-lg font-mono text-right text-sm"
                     step="0.01"
                   />
                   <input
@@ -316,21 +316,21 @@ export default function MobileDetalheOSPage() {
                     placeholder="Valor unit."
                     value={novoItem.valor_unitario}
                     onChange={(e) => setNovoItem({ ...novoItem, valor_unitario: Number(e.target.value) })}
-                    className="flex-1 px-2 py-2 border border-line rounded-lg font-mono text-right text-sm"
+                    className="flex-1 px-2 py-2 border border-nv-border rounded-lg font-mono text-right text-sm"
                     step="0.01"
                   />
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setMostrarForm(false)}
-                    className="flex-1 border border-line rounded-lg py-2 text-sm text-ink-500"
+                    className="flex-1 border border-nv-border rounded-lg py-2 text-sm text-nv-soft"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={() => addItemMut.mutate(novoItem)}
                     disabled={!podeAdicionarItem || addItemMut.isPending}
-                    className={`flex-1 rounded-lg py-2 text-sm font-medium text-white ${podeAdicionarItem && !addItemMut.isPending ? 'bg-naval' : 'bg-ink-300'}`}
+                    className={`flex-1 rounded-lg py-2 text-sm font-medium ${podeAdicionarItem && !addItemMut.isPending ? 'bg-nv-primary text-nv-bg' : 'bg-nv-surface-2 text-nv-soft'}`}
                   >
                     {addItemMut.isPending ? 'Salvando…' : 'Adicionar'}
                   </button>
@@ -342,25 +342,25 @@ export default function MobileDetalheOSPage() {
       </div>
 
       {/* Anexos — sempre disponíveis após a criação */}
-      <div className="bg-white border border-line rounded-lg p-3">
-        <div className="text-[10px] uppercase tracking-wider text-ink-500 mb-2">Anexos</div>
+      <div className="bg-nv-surface border border-nv-border rounded-lg p-3">
+        <div className="text-[10px] uppercase tracking-wider text-nv-soft mb-2">Anexos</div>
 
         {/* Fotos */}
         <div className="mb-3">
           <div className="text-xs font-medium mb-1.5">
-            Fotos <span className={temFoto ? 'text-ok-fg' : 'text-ink-400'}>
+            Fotos <span className={temFoto ? 'text-nv-success' : 'text-nv-soft'}>
               ({(os.anexos || []).filter((a: any) => a.tipo?.startsWith('foto')).length})
             </span>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {(os.anexos || []).filter((a: any) => a.tipo?.startsWith('foto')).map((a: any) => (
               <button key={a.id} type="button" onClick={() => setAnexoAberto(a)}
-                 className="aspect-square rounded-lg overflow-hidden block border border-line">
+                 className="aspect-square rounded-lg overflow-hidden block border border-nv-border">
                 <img src={a.arquivo_url} alt="Foto anexada" className="w-full h-full object-cover" />
               </button>
             ))}
-            <label className="aspect-square border-2 border-dashed border-line rounded-lg flex flex-col items-center justify-center text-ink-500 text-[11px] active:bg-sky-bg cursor-pointer" style={{ minHeight: 80 }}>
-              <span className="font-semibold text-sm text-navy-800">+ Câmera</span>
+            <label className="aspect-square border-2 border-dashed border-nv-border rounded-lg flex flex-col items-center justify-center text-nv-soft text-[11px] active:bg-nv-surface-2 cursor-pointer" style={{ minHeight: 80 }}>
+              <span className="font-semibold text-sm text-nv-primary">+ Câmera</span>
               <input
                 type="file" accept="image/*" capture="environment"
                 className="hidden"
@@ -372,21 +372,21 @@ export default function MobileDetalheOSPage() {
 
         {/* NF */}
         <div>
-          <div className={`text-xs font-medium mb-1.5 ${temNF ? 'text-ok-fg' : 'text-ink-500'}`}>
+          <div className={`text-xs font-medium mb-1.5 ${temNF ? 'text-nv-success' : 'text-nv-soft'}`}>
             NF {temNF ? '· anexada' : '· obrigatória pra encerrar'}
           </div>
           {temNF && (
             <button
               type="button"
               onClick={() => setAnexoAberto(nfMaisRecente(os.anexos) ?? null)}
-              className="block w-full border-2 rounded-lg py-4 flex flex-col items-center mb-1.5 border-ok bg-ok-bg/20 active:bg-ok-bg/40"
+              className="block w-full border-2 rounded-lg py-4 flex flex-col items-center mb-1.5 border-nv-success bg-nv-success-bg active:bg-nv-success-bg"
             >
-              <span className="font-medium text-sm text-navy-800">Ver NF anexada</span>
+              <span className="font-medium text-sm text-nv-ink">Ver NF anexada</span>
             </button>
           )}
-          <label className={`block w-full border-2 border-dashed rounded-lg ${temNF ? 'py-2' : 'py-5'} flex flex-col items-center cursor-pointer active:bg-sky-bg border-line`}>
-            <span className={`font-medium text-navy-800 ${temNF ? 'text-xs' : 'text-sm'}`}>{temNF ? 'Substituir NF' : '+ Anexar NF'}</span>
-            {!temNF && <span className="text-[10px] text-ink-400">PDF · JPG · ≤20MB</span>}
+          <label className={`block w-full border-2 border-dashed rounded-lg ${temNF ? 'py-2' : 'py-5'} flex flex-col items-center cursor-pointer active:bg-nv-surface-2 border-nv-border`}>
+            <span className={`font-medium text-nv-primary ${temNF ? 'text-xs' : 'text-sm'}`}>{temNF ? 'Substituir NF' : '+ Anexar NF'}</span>
+            {!temNF && <span className="text-[10px] text-nv-soft">PDF · JPG · ≤20MB</span>}
             <input
               type="file" accept="image/*,application/pdf"
               className="hidden"
@@ -395,21 +395,21 @@ export default function MobileDetalheOSPage() {
           </label>
         </div>
 
-        {upload.isPending && <div className="text-xs text-warn-fg mt-2 text-center">Enviando…</div>}
+        {upload.isPending && <div className="text-xs text-nv-warn mt-2 text-center">Enviando…</div>}
       </div>
 
       {/* Ação principal (só se houver próxima transição válida) */}
       {podeAcao && (
         <div className="pb-2 space-y-2">
           {bloqueado && (
-            <div className="text-xs text-err-fg bg-err-bg border border-err rounded-lg px-3 py-2 text-center">
+            <div className="text-xs text-nv-danger-text bg-nv-danger-bg border border-nv-danger rounded-lg px-3 py-2 text-center">
               {bloqueado}
             </div>
           )}
           <button
             onClick={() => executarTransicao(podeAcao.acao)}
             disabled={transicionar.isPending || !!bloqueado}
-            className={`w-full py-3 rounded-lg font-semibold active:opacity-90 disabled:opacity-40 ${podeAcao.cor}`}
+            className={`w-full py-3 rounded-lg font-semibold active:opacity-90 disabled:bg-nv-surface-2 disabled:text-nv-soft ${podeAcao.cor}`}
             style={{ minHeight: 48 }}
           >
             {transicionar.isPending ? 'Enviando…' : podeAcao.label}
@@ -423,7 +423,7 @@ export default function MobileDetalheOSPage() {
           <button
             onClick={() => executarTransicao('encerrar-garantia', true)}
             disabled={transicionar.isPending}
-            className="w-full py-3 rounded-lg font-semibold text-navy-800 bg-white border border-line active:opacity-90 disabled:opacity-40"
+            className="w-full py-3 rounded-lg font-semibold text-nv-primary bg-nv-surface border border-nv-border active:opacity-90 disabled:bg-nv-surface-2 disabled:text-nv-soft"
             style={{ minHeight: 48 }}
           >
             Encerrar em garantia
@@ -437,7 +437,7 @@ export default function MobileDetalheOSPage() {
           <button
             onClick={() => executarTransicao('cancelar', true)}
             disabled={transicionar.isPending}
-            className="w-full py-3 rounded-lg font-semibold text-err-fg bg-err-bg border border-err active:opacity-90 disabled:opacity-40"
+            className="w-full py-3 rounded-lg font-semibold text-nv-danger-text bg-nv-danger-bg border border-nv-danger active:bg-nv-danger-bg disabled:bg-nv-surface-2 disabled:text-nv-soft disabled:border-nv-border-strong"
             style={{ minHeight: 48 }}
           >
             Cancelar OS
@@ -448,15 +448,15 @@ export default function MobileDetalheOSPage() {
       {/* Modal de motivo (na própria tela — prompt() não funciona no iframe) */}
       {motivoModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3"
+          className="fixed inset-0 z-50 bg-[rgba(2,15,26,.7)] flex items-end sm:items-center justify-center p-3"
           onClick={() => !transicionar.isPending && setMotivoModal(null)}
         >
           <div
-            className="bg-white rounded-xl w-full max-w-md p-4 space-y-3"
+            className="bg-nv-surface rounded-xl w-full max-w-md p-4 space-y-3"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="font-semibold text-navy-900">{MOTIVO_TITULO[motivoModal] || 'Motivo'} · OS #{os.id}</div>
-            <div className="text-[13px] text-ink-500">
+            <div className="font-semibold text-nv-ink">{MOTIVO_TITULO[motivoModal] || 'Motivo'} · OS #{os.id}</div>
+            <div className="text-[13px] text-nv-soft">
               {motivoModal === 'encerrar-garantia'
                 ? 'Fecha sem custo/NF/foto. Informe o motivo (obrigatório):'
                 : 'Informe o motivo (obrigatório):'}
@@ -467,10 +467,10 @@ export default function MobileDetalheOSPage() {
               onChange={(e) => setMotivoText(e.target.value)}
               rows={3}
               placeholder="Ex.: troca da junta do motor em garantia…"
-              className="w-full px-3 py-2 border border-line rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-nv-border rounded-lg text-sm"
             />
             {transicionar.isError && (
-              <div className="text-xs text-err-fg bg-err-bg border border-err rounded-lg px-3 py-2">
+              <div className="text-xs text-nv-danger-text bg-nv-danger-bg border border-nv-danger rounded-lg px-3 py-2">
                 {(transicionar.error as any)?.response?.data?.detail || 'Erro. Tente de novo.'}
               </div>
             )}
@@ -478,14 +478,14 @@ export default function MobileDetalheOSPage() {
               <button
                 onClick={() => setMotivoModal(null)}
                 disabled={transicionar.isPending}
-                className="flex-1 border border-line rounded-lg py-2.5 text-sm text-ink-500"
+                className="flex-1 border border-nv-border rounded-lg py-2.5 text-sm text-nv-soft"
               >
                 Voltar
               </button>
               <button
                 onClick={() => transicionar.mutate({ acao: motivoModal, motivo: motivoText.trim() })}
                 disabled={!motivoText.trim() || transicionar.isPending}
-                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold text-white ${motivoText.trim() && !transicionar.isPending ? (motivoModal === 'encerrar-garantia' ? 'bg-naval' : 'bg-err-fg') : 'bg-ink-300'}`}
+                className={`flex-1 rounded-lg py-2.5 text-sm font-semibold ${motivoText.trim() && !transicionar.isPending ? (motivoModal === 'encerrar-garantia' ? 'bg-nv-primary text-nv-bg' : 'bg-nv-danger text-nv-bg') : 'bg-nv-surface-2 text-nv-soft'}`}
               >
                 {transicionar.isPending ? 'Enviando…' : 'Confirmar'}
               </button>

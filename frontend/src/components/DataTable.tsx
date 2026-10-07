@@ -102,7 +102,7 @@ export function DataTable<T>({
     <div className={`overflow-x-auto ${className || ''}`}>
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-[11px] uppercase tracking-wider text-ink-500 bg-[#F8FBFD]">
+          <tr className="text-[11px] uppercase tracking-wider text-nv-soft bg-nv-surface-2">
             {columns.map(col => (
               <Th
                 key={col.key}
@@ -127,7 +127,7 @@ export function DataTable<T>({
           {sorted.map(row => (
             <tr
               key={rowKey(row)}
-              className={`row border-t border-line ${onRowClick ? 'cursor-pointer' : ''}`}
+              className={`row border-t border-nv-border ${onRowClick ? 'cursor-pointer' : ''}`}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
             >
               {columns.map(col => (
@@ -171,11 +171,11 @@ function Th<T>({
           type="button"
           onClick={onSort}
           disabled={!canSort}
-          className={`inline-flex items-center gap-1 ${canSort ? 'hover:text-navy-800 cursor-pointer' : 'cursor-default'}`}
+          className={`inline-flex items-center gap-1 ${canSort ? 'hover:text-nv-ink cursor-pointer' : 'cursor-default'}`}
         >
           {col.label}
           {canSort && (
-            <span className={`ml-0.5 ${isSorted ? 'text-navy-800' : 'text-ink-300'}`}>
+            <span className={`ml-0.5 ${isSorted ? 'text-nv-primary' : 'text-nv-muted'}`}>
               <Icon name={isSorted === 'desc' ? 'arrow-down' : isSorted === 'asc' ? 'arrow-up' : 'sort'} size={10} />
             </span>
           )}
@@ -184,7 +184,7 @@ function Th<T>({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onToggleFilter() }}
-            className={`p-0.5 rounded hover:bg-sky-bg ${filterValue ? 'text-sky-700' : 'text-ink-300'}`}
+            className={`p-0.5 rounded hover:bg-nv-border-strong ${filterValue ? 'text-nv-primary' : 'text-nv-muted'}`}
             title="Filtrar"
           >
             <Icon name="filter" size={11} />
@@ -193,7 +193,7 @@ function Th<T>({
         {isFilterOpen && (
           <div
             ref={wrapRef}
-            className="absolute top-full left-0 mt-1 z-10 bg-white border border-line rounded-lg shadow-lg p-2 w-56 text-normal"
+            className="absolute top-full left-0 mt-1 z-10 bg-nv-surface border border-nv-border-strong rounded-lg shadow-lg p-2 w-56 text-normal"
             onClick={(e) => e.stopPropagation()}
           >
             <input
@@ -208,7 +208,7 @@ function Th<T>({
               <button
                 type="button"
                 onClick={() => { onFilter(''); onToggleFilter() }}
-                className="text-xs text-sky-700 mt-1 font-semibold"
+                className="text-xs text-nv-primary mt-1 font-semibold"
               >
                 Limpar
               </button>

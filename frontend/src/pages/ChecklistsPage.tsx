@@ -23,8 +23,8 @@ export default function ChecklistsPage() {
     <section>
       <div className="flex items-center gap-3 mb-4">
         <div>
-          <div className="display text-lg font-bold text-navy-900">Checklists mensais</div>
-          <div className="text-xs text-ink-500">{data?.total ?? '—'} registrados</div>
+          <div className="display text-lg font-bold text-nv-ink">Checklists mensais</div>
+          <div className="text-xs text-nv-soft">{data?.total ?? '—'} registrados</div>
         </div>
       </div>
 
@@ -40,7 +40,7 @@ export default function ChecklistsPage() {
             {
               key: 'data_checklist', label: 'Data',
               accessor: (c: any) => c.data_checklist,
-              cellClassName: 'font-mono text-xs text-ink-500',
+              cellClassName: 'font-mono text-xs text-nv-soft',
               render: (c: any) => fmtDataHora(c.data_checklist),
             },
             {
@@ -49,7 +49,7 @@ export default function ChecklistsPage() {
               render: (c: any) => (
                 <>
                   <div className="font-semibold">{c.veiculo_modelo || '—'}</div>
-                  <div className="text-xs text-ink-500 font-mono">{c.veiculo_placa}</div>
+                  <div className="text-xs text-nv-soft font-mono">{c.veiculo_placa}</div>
                 </>
               ),
             },
@@ -80,7 +80,7 @@ export default function ChecklistsPage() {
               render: (c: any) =>
                 c.total_problemas > 0
                   ? <span className="pill pill-err">{c.total_problemas}</span>
-                  : <span className="text-ink-400">—</span>,
+                  : <span className="text-nv-soft">—</span>,
             },
             {
               key: 'os_geradas', label: 'OS geradas', align: 'center',
@@ -89,7 +89,7 @@ export default function ChecklistsPage() {
                 const n = (c.os_geradas || []).length
                 return n > 0
                   ? <span className="pill pill-warn">{n}</span>
-                  : <span className="text-ink-400">—</span>
+                  : <span className="text-nv-soft">—</span>
               },
             },
           ]}

@@ -35,35 +35,35 @@ export default function MobileHomePage() {
       <div className="grid grid-cols-2 gap-3">
         <div className="card-m">
           <div className="kpi-label">OS abertas</div>
-          <div className="text-2xl font-bold mt-2 font-mono num text-navy-900">{dash?.os_abertas ?? '—'}</div>
+          <div className="text-2xl font-bold mt-2 font-mono num text-nv-ink">{dash?.os_abertas ?? '—'}</div>
         </div>
         <div className="card-m">
           <div className="kpi-label">Atrasadas</div>
-          <div className={`text-2xl font-bold mt-2 font-mono num ${(dash?.os_atrasadas ?? 0) > 0 ? 'text-err-fg' : 'text-navy-900'}`}>
+          <div className={`text-2xl font-bold mt-2 font-mono num ${(dash?.os_atrasadas ?? 0) > 0 ? 'text-nv-danger-text' : 'text-nv-ink'}`}>
             {dash?.os_atrasadas ?? '—'}
           </div>
         </div>
         <div className="card-m">
           <div className="kpi-label">CPK</div>
-          <div className="text-lg font-bold mt-2 font-mono num text-navy-900">
+          <div className="text-lg font-bold mt-2 font-mono num text-nv-ink">
             {dash ? fmtBRL(dash.cpk_acumulado_ytd) : '—'}
-            <span className="text-xs text-ink-400 font-medium">/km</span>
+            <span className="text-xs text-nv-soft font-medium">/km</span>
           </div>
         </div>
         <div className="card-m">
           <div className="kpi-label">Custo do mês</div>
-          <div className="text-lg font-bold mt-2 font-mono num text-navy-900">
+          <div className="text-lg font-bold mt-2 font-mono num text-nv-ink">
             {dash ? fmtBRL(dash.custo_total_mes) : '—'}
           </div>
         </div>
       </div>
 
       {(dash?.os_atrasadas ?? 0) > 0 && (
-        <Link to="/os?status=aberta" className="flex items-start gap-2 bg-warn-bg border border-warn rounded-xl p-3 text-warn-fg active:opacity-80">
+        <Link to="/os?status=aberta" className="flex items-start gap-2 bg-nv-warn-bg border border-nv-warn rounded-xl p-3 text-nv-warn active:bg-nv-warn-bg">
           <Icon name="alert" size={18} />
           <div className="flex-1 text-sm">
             <b>{dash!.os_atrasadas} OS atrasadas</b> abertas há mais de 5 dias.
-            <span className="block text-xs text-navy-800 font-semibold mt-0.5">Ver lista →</span>
+            <span className="block text-xs text-nv-primary font-semibold mt-0.5">Ver lista →</span>
           </div>
         </Link>
       )}
@@ -71,8 +71,8 @@ export default function MobileHomePage() {
       {/* Últimas OS */}
       <div>
         <div className="flex items-center justify-between mb-2 px-1">
-          <div className="display font-bold text-navy-900 text-sm">Últimas OS</div>
-          <Link to="/os" className="text-xs text-sky-700 font-semibold flex items-center gap-1">
+          <div className="display font-bold text-nv-ink text-sm">Últimas OS</div>
+          <Link to="/os" className="text-xs text-nv-primary font-semibold flex items-center gap-1">
             ver todas <Icon name="chevron-right" size={12} />
           </Link>
         </div>
@@ -82,22 +82,22 @@ export default function MobileHomePage() {
             <Link
               key={os.id}
               to={`/os/${os.id}`}
-              className="block card-m active:bg-sky-bg/40"
+              className="block card-m active:bg-nv-surface-2"
             >
               <div className="flex justify-between items-start gap-2 mb-1.5">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-mono text-navy-800 font-semibold text-sm">#{os.id}</span>
+                  <span className="font-mono text-nv-primary font-semibold text-sm">#{os.id}</span>
                   <StatusBadge status={os.status} />
                   <FilialChip filialId={os.filial_id} />
                 </div>
-                <div className="font-semibold font-mono num text-sm text-navy-900 shrink-0">
+                <div className="font-semibold font-mono num text-sm text-nv-ink shrink-0">
                   {fmtBRL(os.valor_total)}
                 </div>
               </div>
               <div className="font-semibold text-sm truncate">
-                {os.veiculo_placa} <span className="text-ink-500 font-normal">· {os.veiculo_modelo || '—'}</span>
+                {os.veiculo_placa} <span className="text-nv-soft font-normal">· {os.veiculo_modelo || '—'}</span>
               </div>
-              <div className="flex justify-between items-center mt-1 text-[11px] text-ink-500 gap-2">
+              <div className="flex justify-between items-center mt-1 text-[11px] text-nv-soft gap-2">
                 <span className="truncate flex-1">{os.descricao_problema || '—'}</span>
                 <span className="font-mono shrink-0">{fmtData(os.data_abertura)}</span>
               </div>
@@ -112,7 +112,7 @@ export default function MobileHomePage() {
         </div>
       </div>
 
-      <div className="text-[10px] text-ink-400 text-center pt-2">
+      <div className="text-[10px] text-nv-soft text-center pt-2">
         {user?.role === 'admin' ? 'Vendo todas as filiais' : `Filial ${user?.filial_id} · RBAC ativo`}
       </div>
     </section>

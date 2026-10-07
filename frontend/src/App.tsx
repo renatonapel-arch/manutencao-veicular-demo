@@ -34,16 +34,16 @@ function isEmbedded(): boolean {
 
 function RequireAuth({ children }: { children: JSX.Element }) {
   const { user, loading } = useAuth()
-  if (loading) return <div className="p-6 text-ink-500">Carregando…</div>
+  if (loading) return <div className="p-6 text-nv-soft">Carregando…</div>
   if (!user) {
     // Embarcado (piloto Opção D) e sem sessão: mostra mensagem clara em vez
     // de redirecionar pra /login com credenciais de demo.
     if (isEmbedded()) {
       return (
-        <div className="min-h-screen flex items-center justify-center p-6 bg-page">
+        <div className="min-h-screen flex items-center justify-center p-6 bg-nv-bg">
           <div className="card p-8 max-w-md text-center">
-            <div className="display font-bold text-navy-900 mb-2">Sessão expirada</div>
-            <div className="text-sm text-ink-500 mb-4">
+            <div className="display font-bold text-nv-ink mb-2">Sessão expirada</div>
+            <div className="text-sm text-nv-soft mb-4">
               Não foi possível validar sua sessão do Clavis. Feche esta aba
               e abra o Clavis de novo, ou clique em Recarregar.
             </div>

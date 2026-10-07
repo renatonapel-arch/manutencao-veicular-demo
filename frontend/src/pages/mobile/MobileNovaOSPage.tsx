@@ -65,11 +65,11 @@ export default function MobileNovaOSPage() {
   return (
     <section className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
-        <div className="text-[11px] uppercase tracking-wider text-ink-500 font-medium">Veículo</div>
+        <div className="text-[11px] uppercase tracking-wider text-nv-soft font-medium">Veículo</div>
         <select
           value={veiculoId}
           onChange={(e) => onSelectVeiculo(Number(e.target.value))}
-          className="w-full px-3 py-3 border border-line rounded-lg bg-white"
+          className="w-full px-3 py-3 border border-nv-border rounded-lg bg-nv-surface"
           style={{ minHeight: 48 }}
         >
           <option value="">— escolha o veículo —</option>
@@ -78,53 +78,53 @@ export default function MobileNovaOSPage() {
           ))}
         </select>
         {veiculoSel && (
-          <div className="bg-sky-bg border border-sky-500 rounded-lg p-3 text-sm">
-            <div className="text-[10px] uppercase text-navy-800">KM atual (Patrimonial)</div>
+          <div className="bg-nv-surface-2 border border-nv-primary rounded-lg p-3 text-sm">
+            <div className="text-[10px] uppercase text-nv-primary">KM atual (Patrimonial)</div>
             <div className="font-mono text-lg">{veiculoSel.km_atual.toLocaleString('pt-BR')}</div>
-            <div className="text-[10px] uppercase text-navy-800 mt-2">Filial</div>
+            <div className="text-[10px] uppercase text-nv-primary mt-2">Filial</div>
             <div>{veiculoSel.filial_id === 1 ? 'Maringá (100)' : veiculoSel.filial_id === 2 ? 'Ponta Grossa (700)' : 'LEM (900)'}</div>
           </div>
         )}
         <div>
-          <label className="text-[11px] text-ink-500 block mb-1">KM lido agora *</label>
+          <label className="text-[11px] text-nv-soft block mb-1">KM lido agora *</label>
           <input
             type="number"
             value={km}
             onChange={(e) => setKm(Number(e.target.value))}
-            className="w-full px-3 py-3 border-2 border-warn rounded-lg font-mono text-lg bg-warn-bg/30"
+            className="w-full px-3 py-3 border-2 border-nv-warn rounded-lg font-mono text-lg bg-nv-warn-bg"
             style={{ minHeight: 48 }}
           />
         </div>
         <div>
-          <label className="text-[11px] text-ink-500 block mb-1">Motivo</label>
+          <label className="text-[11px] text-nv-soft block mb-1">Motivo</label>
           <textarea
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Ex: vazamento de óleo no motor"
-            className="w-full px-3 py-2 border border-line rounded-lg h-24 text-sm"
+            className="w-full px-3 py-2 border border-nv-border rounded-lg h-24 text-sm"
           />
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setTipoOs('corretiva_manual')} className={`flex-1 py-3 rounded-lg border-2 font-medium ${tipoOs === 'corretiva_manual' ? 'border-err bg-err-bg text-err-fg' : 'border-line text-ink-500'}`} style={{ minHeight: 48 }}>
+          <button onClick={() => setTipoOs('corretiva_manual')} className={`flex-1 py-3 rounded-lg border-2 font-medium ${tipoOs === 'corretiva_manual' ? 'border-nv-danger bg-nv-danger-bg text-nv-danger-text' : 'border-nv-border-strong text-nv-soft'}`} style={{ minHeight: 48 }}>
             Corretiva
           </button>
-          <button onClick={() => setTipoOs('preventiva_automatica')} className={`flex-1 py-3 rounded-lg border-2 font-medium ${tipoOs === 'preventiva_automatica' ? 'border-ok bg-ok-bg text-ok-fg' : 'border-line text-ink-500'}`} style={{ minHeight: 48 }}>
+          <button onClick={() => setTipoOs('preventiva_automatica')} className={`flex-1 py-3 rounded-lg border-2 font-medium ${tipoOs === 'preventiva_automatica' ? 'border-nv-success bg-nv-success-bg text-nv-success' : 'border-nv-border-strong text-nv-soft'}`} style={{ minHeight: 48 }}>
             Preventiva
           </button>
         </div>
 
-        {erro && <div className="bg-err-bg border border-err text-err-fg rounded p-2 text-sm">{erro}</div>}
+        {erro && <div className="bg-nv-danger-bg border border-nv-danger text-nv-danger-text rounded p-2 text-sm">{erro}</div>}
 
-        <div className="text-[11px] text-ink-500 text-center pt-1">
+        <div className="text-[11px] text-nv-soft text-center pt-1">
           Ao abrir, o responsável da filial recebe um aviso e cuida da oficina e do orçamento.
         </div>
       </div>
 
-      <div className="bg-white border-t border-line p-3 sticky bottom-16 z-10" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="bg-nv-surface border-t border-nv-border p-3 sticky bottom-16 z-10" style={{ marginBottom: 'env(safe-area-inset-bottom)' }}>
         <button
           onClick={() => createMut.mutate()}
           disabled={!podeSalvar || createMut.isPending}
-          className={`w-full rounded-lg font-semibold py-3 ${podeSalvar && !createMut.isPending ? 'bg-ok text-white' : 'bg-ink-200 text-ink-500'}`}
+          className={`w-full rounded-lg font-semibold py-3 ${podeSalvar && !createMut.isPending ? 'bg-nv-success text-nv-bg' : 'bg-nv-surface-2 text-nv-soft'}`}
           style={{ minHeight: 48 }}
         >
           {createMut.isPending ? 'Abrindo...' : 'Abrir Ordem de Serviço'}

@@ -81,20 +81,20 @@ export default function OficinasPage() {
     <section>
       <div className="flex justify-between items-start mb-3">
         <div>
-          <div className="text-lg font-semibold text-naval">Catálogo de oficinas</div>
-          <div className="text-xs text-ink-500">{oficinas?.length || 0} oficinas ativas · texto livre <b className="text-danger-fg">bloqueado</b></div>
+          <div className="text-lg font-semibold text-nv-primary">Catálogo de oficinas</div>
+          <div className="text-xs text-nv-soft">{oficinas?.length || 0} oficinas ativas · texto livre <b className="text-nv-danger-text">bloqueado</b></div>
         </div>
         <button
           onClick={() => { setForm(vazia); setErro(''); setModalAberto(true) }}
-          className="bg-naval text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-noite"
+          className="bg-nv-primary text-nv-bg px-3 py-1.5 rounded text-sm font-medium hover:bg-nv-primary-hover"
         >
           + Nova oficina
         </button>
       </div>
 
-      <div className="bg-white border border-border rounded p-3 mb-3">
+      <div className="bg-nv-surface border border-nv-border-strong rounded p-3 mb-3">
         <input
-          className="border border-border-strong rounded px-2 py-1 w-64 text-xs"
+          className="border border-nv-border-strong rounded px-2 py-1 w-64 text-xs"
           placeholder="🔍 Buscar nome / CNPJ / cidade"
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -108,7 +108,7 @@ export default function OficinasPage() {
           cta={
             <button
               onClick={() => { setForm(vazia); setErro(''); setModalAberto(true) }}
-              className="bg-naval text-white px-4 py-2 rounded text-sm font-medium"
+              className="bg-nv-primary text-nv-bg px-4 py-2 rounded text-sm font-medium hover:bg-nv-primary-hover"
             >
               + Cadastrar primeira oficina
             </button>
@@ -156,7 +156,7 @@ export default function OficinasPage() {
               {
                 key: 'avaliacao', label: 'Avaliação', align: 'center',
                 accessor: (o: any) => Number(o.avaliacao || 0),
-                cellClassName: 'text-warn-fg',
+                cellClassName: 'text-nv-warn',
                 render: (o: any) => `★ ${o.avaliacao || '—'}`,
               },
               {
@@ -169,7 +169,7 @@ export default function OficinasPage() {
                 render: (o: any) => (
                   <button
                     onClick={(e) => { e.stopPropagation(); onDelete(o.id, o.nome) }}
-                    className="text-ink-400 hover:text-err-fg px-2 text-xs font-semibold"
+                    className="text-nv-soft hover:text-nv-danger-text px-2 text-xs font-semibold"
                     title="Desativar oficina"
                   >
                     Remover
@@ -183,63 +183,63 @@ export default function OficinasPage() {
 
       {/* Modal criar */}
       {modalAberto && (
-        <div className="fixed inset-0 bg-noite/50 flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false) }}>
-          <div className="bg-white rounded-lg max-w-lg w-full p-5">
-            <div className="text-lg font-semibold text-naval mb-3">+ Nova oficina</div>
+        <div className="fixed inset-0 bg-[rgba(2,15,26,.7)] flex items-center justify-center z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) setModalAberto(false) }}>
+          <div className="bg-nv-surface rounded-lg max-w-lg w-full p-5">
+            <div className="text-lg font-semibold text-nv-primary mb-3">+ Nova oficina</div>
 
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] text-ink-500">Nome <span className="text-danger">*</span></label>
+                <label className="text-[11px] text-nv-soft">Nome <span className="text-nv-danger-text">*</span></label>
                 <input
                   type="text"
                   value={form.nome}
                   onChange={(e) => setForm({ ...form, nome: e.target.value })}
                   placeholder="Ex: DIDA MOTOS"
-                  className="w-full px-3 py-2 border border-border-strong rounded text-sm"
+                  className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm"
                   autoFocus
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] text-ink-500">CNPJ</label>
+                  <label className="text-[11px] text-nv-soft">CNPJ</label>
                   <input
                     type="text"
                     value={form.cnpj}
                     onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
                     placeholder="00.000.000/0001-00"
-                    className="w-full px-3 py-2 border border-border-strong rounded text-sm font-mono"
+                    className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm font-mono"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-ink-500">Telefone</label>
+                  <label className="text-[11px] text-nv-soft">Telefone</label>
                   <input
                     type="text"
                     value={form.telefone}
                     onChange={(e) => setForm({ ...form, telefone: e.target.value })}
                     placeholder="+55 44 99999-0000"
-                    className="w-full px-3 py-2 border border-border-strong rounded text-sm font-mono"
+                    className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm font-mono"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="col-span-2">
-                  <label className="text-[11px] text-ink-500">Cidade</label>
+                  <label className="text-[11px] text-nv-soft">Cidade</label>
                   <input
                     type="text"
                     value={form.cidade}
                     onChange={(e) => setForm({ ...form, cidade: e.target.value })}
                     placeholder="Ex: Maringá"
-                    className="w-full px-3 py-2 border border-border-strong rounded text-sm"
+                    className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] text-ink-500">UF</label>
+                  <label className="text-[11px] text-nv-soft">UF</label>
                   <select
                     value={form.uf}
                     onChange={(e) => setForm({ ...form, uf: e.target.value })}
-                    className="w-full px-3 py-2 border border-border-strong rounded text-sm bg-white"
+                    className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm bg-nv-surface"
                   >
                     {UFS.map(u => <option key={u} value={u}>{u}</option>)}
                   </select>
@@ -248,21 +248,21 @@ export default function OficinasPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] text-ink-500">Especialidade</label>
+                  <label className="text-[11px] text-nv-soft">Especialidade</label>
                   <select
                     value={form.especialidade}
                     onChange={(e) => setForm({ ...form, especialidade: e.target.value })}
-                    className="w-full px-3 py-2 border border-border-strong rounded text-sm bg-white"
+                    className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm bg-nv-surface"
                   >
                     {ESPECIALIDADES.map(esp => <option key={esp} value={esp}>{esp}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-[11px] text-ink-500">Filial preferencial</label>
+                  <label className="text-[11px] text-nv-soft">Filial preferencial</label>
                   <select
                     value={form.filial_id_preferencial ?? ''}
                     onChange={(e) => setForm({ ...form, filial_id_preferencial: e.target.value ? Number(e.target.value) : null })}
-                    className="w-full px-3 py-2 border border-border-strong rounded text-sm bg-white"
+                    className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm bg-nv-surface"
                   >
                     <option value="">(nenhuma)</option>
                     <option value="1">Maringá (100)</option>
@@ -272,21 +272,21 @@ export default function OficinasPage() {
                 </div>
               </div>
 
-              <div className="text-[11px] text-ink-500 bg-gelo border border-ceu-claro rounded p-2">
+              <div className="text-[11px] text-nv-soft bg-nv-surface-2 border border-nv-border-strong rounded p-2">
                 💡 Toda OS no módulo vai escolher daqui — texto livre <b>bloqueado</b>. Pra desativar uma oficina sem apagar histórico, use o ícone 🗑 na lista.
               </div>
 
               {erro && (
-                <div className="bg-danger-bg border border-danger text-danger-fg rounded p-2 text-sm">{erro}</div>
+                <div className="bg-nv-danger-bg border border-nv-danger text-nv-danger-text rounded p-2 text-sm">{erro}</div>
               )}
             </div>
 
             <div className="flex gap-2 justify-end mt-4">
-              <button onClick={() => setModalAberto(false)} className="border border-border-strong bg-white px-3 py-1.5 rounded text-sm">Cancelar</button>
+              <button onClick={() => setModalAberto(false)} className="border border-nv-border-strong bg-nv-surface px-3 py-1.5 rounded text-sm">Cancelar</button>
               <button
                 onClick={onSalvar}
                 disabled={createMut.isPending}
-                className={`px-3 py-1.5 rounded text-sm font-medium text-white ${createMut.isPending ? 'bg-ink-300' : 'bg-naval hover:bg-noite'}`}
+                className={`px-3 py-1.5 rounded text-sm font-medium ${createMut.isPending ? 'bg-nv-surface-2 text-nv-soft' : 'bg-nv-primary text-nv-bg hover:bg-nv-primary-hover'}`}
               >
                 {createMut.isPending ? 'Salvando...' : 'Criar oficina'}
               </button>
