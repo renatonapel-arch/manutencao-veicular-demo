@@ -37,7 +37,8 @@ RH_SECRET = os.environ.get("RH_JORNADA_SYNC_SECRET", "")
 # Se não achar, usa o primeiro admin ativo (fallback nunca falha por causa disso).
 _SYSTEM_USER_EMAIL_FALLBACK = "hudson@napel.local"
 
-FILIAL_CODIGO_PARA_ID = {100: 1, 700: 2, 900: 3}
+# código oficial → id interno (mesmo mapa do sync da Frota, patrimonial_client._map_filial)
+FILIAL_CODIGO_PARA_ID = {100: 1, 200: 2, 300: 3, 700: 4, 800: 5, 900: 6}
 
 
 def require_secret(x_sync_secret: str = Header(default="", alias="X-Sync-Secret")):

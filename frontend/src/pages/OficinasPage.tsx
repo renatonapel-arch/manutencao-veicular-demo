@@ -1,3 +1,4 @@
+import { FILIAIS, nomeFilial } from '../filiais'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
@@ -265,9 +266,7 @@ export default function OficinasPage() {
                     className="w-full px-3 py-2 border border-nv-border-strong rounded text-sm bg-nv-surface"
                   >
                     <option value="">(nenhuma)</option>
-                    <option value="1">Maringá (100)</option>
-                    <option value="2">Ponta Grossa (700)</option>
-                    <option value="3">LEM (900)</option>
+                    {FILIAIS.map(f => <option key={f.id} value={f.id}>{nomeFilial(f.id)}</option>)}
                   </select>
                 </div>
               </div>

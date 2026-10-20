@@ -1,12 +1,10 @@
+import { nomeFilial } from '../../filiais'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/AuthContext'
 import { Icon, type IconName } from '../../components/Icons'
 
-function nomeFilial(fid: number | null | undefined) {
-  const map: Record<number, string> = {
-    1: 'Maringá (100)', 2: 'Ponta Grossa (700)', 3: 'LEM (900)',
-  }
-  return fid ? map[fid] || `Filial ${fid}` : 'Todas as filiais'
+function nomeFilialPerfil(fid: number | null | undefined) {
+  return fid ? nomeFilial(fid) : 'Todas as filiais'
 }
 
 type Item = { to?: string; onClick?: () => void; icon: IconName; label: string; danger?: boolean }
@@ -40,7 +38,7 @@ export default function MobilePerfilPage() {
         <div className="text-xs text-nv-soft font-mono">{user.email}</div>
         <div className="mt-3 flex justify-center gap-1.5 flex-wrap">
           <span className="pill pill-sky">{user.role}</span>
-          <span className="pill pill-gray">{nomeFilial(user.filial_id)}</span>
+          <span className="pill pill-gray">{nomeFilialPerfil(user.filial_id)}</span>
         </div>
       </div>
 

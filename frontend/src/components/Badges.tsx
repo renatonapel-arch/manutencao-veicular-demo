@@ -1,3 +1,5 @@
+import { codigoFilial } from '../filiais'
+
 const ST_LABELS: Record<string, string> = {
   rascunho: 'Rascunho',
   aberta: 'Aberta',
@@ -34,13 +36,8 @@ export const TipoBadge = ({ tipo }: { tipo: string }) => (
   <span className={`badge tp-${tipo}`}>{TP_LABELS[tipo] || tipo}</span>
 )
 
-const FILIAL_CODIGO: Record<number, string> = {
-  1: '100', 2: '700', 3: '900',
-  5: 'DIR',  // Diretoria/executiva — carros de gestor não vinculados às lojas
-}
-
 export const FilialChip = ({ filialId }: { filialId: number }) => {
-  const codigo = FILIAL_CODIGO[filialId] ?? String(filialId)
+  const codigo = codigoFilial(filialId)
   return <span className={`badge fil-${filialId}`}>{codigo}</span>
 }
 

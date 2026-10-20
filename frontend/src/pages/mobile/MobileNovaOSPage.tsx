@@ -1,3 +1,4 @@
+import { nomeFilial } from '../../filiais'
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
@@ -82,7 +83,7 @@ export default function MobileNovaOSPage() {
             <div className="text-[10px] uppercase text-nv-primary">KM atual (Patrimonial)</div>
             <div className="font-mono text-lg">{veiculoSel.km_atual.toLocaleString('pt-BR')}</div>
             <div className="text-[10px] uppercase text-nv-primary mt-2">Filial</div>
-            <div>{veiculoSel.filial_id === 1 ? 'Maringá (100)' : veiculoSel.filial_id === 2 ? 'Ponta Grossa (700)' : 'LEM (900)'}</div>
+            <div>{nomeFilial(veiculoSel.filial_id)}</div>
           </div>
         )}
         <div>

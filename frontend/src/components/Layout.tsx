@@ -4,14 +4,9 @@ import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { useFilial } from '../context/FilialContext'
 import { Icon } from './Icons'
+import { FILIAIS as FILIAIS_MOD, nomeFilial } from '../filiais'
 
-const FILIAIS = [
-  { id: 0, label: 'Todas as filiais' },
-  { id: 1, label: 'Maringá (100)' },
-  { id: 2, label: 'Ponta Grossa (200)' },
-  { id: 3, label: 'Londrina (300)' },
-  { id: 4, label: 'Andaluzia (700)' },
-]
+const FILIAIS = [{ id: 0, label: 'Todas as filiais' }, ...FILIAIS_MOD.map(f => ({ id: f.id, label: nomeFilial(f.id) }))]
 
 type NavItem = { to: string; label: string; icon: string; badge?: number }
 type NavGroup = { group: string; items: NavItem[] }
