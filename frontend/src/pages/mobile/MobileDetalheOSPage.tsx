@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../../components/Badges'
 import AnexoViewer, { AnexoVisual, nfMaisRecente } from '../../components/AnexoViewer'
 import { OrigemCaixaCard, OrigemChip } from '../../components/OrigemCaixa'
+import { useExcluirAnexo } from '../../components/ExcluirAnexo'
 
 /**
  * Detalhe mobile — mostra a OS e os botões da PRÓXIMA transição válida.
@@ -44,6 +45,7 @@ export default function MobileDetalheOSPage() {
   const NOVA_OFICINA_VAZIA = { nome: '', cidade: '', uf: '', telefone: '' }
   const [novaOficina, setNovaOficina] = useState<typeof NOVA_OFICINA_VAZIA | null>(null)
   const [anexoAberto, setAnexoAberto] = useState<AnexoVisual | null>(null)  // foto/NF aberta na própria tela
+  const excluir = useExcluirAnexo(id)  // foto/NF anexada por engano (#0269)
 
   const { data: os, isLoading } = useQuery({
     queryKey: ['os', id],
@@ -118,10 +120,11 @@ export default function MobileDetalheOSPage() {
   })
 
   const upload = useMutation({
-    mutationFn: ({ tipo, file }: { tipo: string; file: File }) => {
+    mutationFn: ({ tipo, file, substituir }: { tipo: string; file: File; substituir?: boolean }) => {
       const f = new FormData()
       f.append('tipo', tipo)
       f.append('arquivo', file)
+      if (substituir) f.append('substituir_nf', 'true')  // a NF anterior sai (#0269)
       return api.post(`/upload/os/${id}/anexos`, f, {
         headers: { 'Content-Type': 'multipart/form-data' },
       }).then(r => r.data)
@@ -354,10 +357,16 @@ export default function MobileDetalheOSPage() {
           </div>
           <div className="grid grid-cols-3 gap-2">
             {(os.anexos || []).filter((a: any) => a.tipo?.startsWith('foto')).map((a: any) => (
-              <button key={a.id} type="button" onClick={() => setAnexoAberto(a)}
-                 className="aspect-square rounded-lg overflow-hidden block border border-nv-border">
-                <img src={a.arquivo_url} alt="Foto anexada" className="w-full h-full object-cover" />
-              </button>
+              <div key={a.id} className="relative">
+                <button type="button" onClick={() => setAnexoAberto(a)}
+                   className="aspect-square w-full rounded-lg overflow-hidden block border border-nv-border">
+                  <img src={a.arquivo_url} alt="Foto anexada" className="w-full h-full object-cover" />
+                </button>
+                {podeNegociar && (
+                  <button type="button" onClick={() => excluir.pedir(a)} aria-label="Excluir foto"
+                          className="absolute top-1 right-1 w-8 h-8 rounded-full bg-[rgba(2,15,26,.75)] text-white text-sm leading-none">✕</button>
+                )}
+              </div>
             ))}
             <label className="aspect-square border-2 border-dashed border-nv-border rounded-lg flex flex-col items-center justify-center text-nv-soft text-[11px] active:bg-nv-surface-2 cursor-pointer" style={{ minHeight: 80 }}>
               <span className="font-semibold text-sm text-nv-primary">+ Câmera</span>
@@ -384,13 +393,17 @@ export default function MobileDetalheOSPage() {
               <span className="font-medium text-sm text-nv-ink">Ver NF anexada</span>
             </button>
           )}
+          {temNF && podeNegociar && (
+            <button type="button" onClick={() => { const nf = nfMaisRecente(os.anexos); if (nf) excluir.pedir(nf) }}
+                    className="w-full py-2 text-xs text-nv-danger-text mb-1.5">Excluir NF</button>
+          )}
           <label className={`block w-full border-2 border-dashed rounded-lg ${temNF ? 'py-2' : 'py-5'} flex flex-col items-center cursor-pointer active:bg-nv-surface-2 border-nv-border`}>
             <span className={`font-medium text-nv-primary ${temNF ? 'text-xs' : 'text-sm'}`}>{temNF ? 'Substituir NF' : '+ Anexar NF'}</span>
             {!temNF && <span className="text-[10px] text-nv-soft">PDF · JPG · ≤20MB</span>}
             <input
               type="file" accept="image/*,application/pdf"
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate({ tipo: 'nf', file: f }) }}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) upload.mutate({ tipo: 'nf', file: f, substituir: temNF }) }}
             />
           </label>
         </div>
@@ -494,6 +507,7 @@ export default function MobileDetalheOSPage() {
         </div>
       )}
 
+      {excluir.modal}
       <AnexoViewer anexo={anexoAberto} onClose={() => setAnexoAberto(null)} />
     </section>
   )

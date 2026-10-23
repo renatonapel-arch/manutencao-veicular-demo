@@ -6,6 +6,7 @@ import { useAuth } from '../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../components/Badges'
 import AnexoViewer, { AnexoVisual, nfMaisRecente } from '../components/AnexoViewer'
 import { OrigemCaixaCard, OrigemChip } from '../components/OrigemCaixa'
+import { useExcluirAnexo } from '../components/ExcluirAnexo'
 
 // v3: cada transição vira POST /ordem-servico/{id}/{acao} — máquina de 9 estados
 const TRANSICOES_ACAO: { de: string; acao: string; label: string; cor: string; precisaMotivo?: boolean }[] = [
@@ -35,6 +36,7 @@ export default function DetalheOSPage() {
   const NOVA_OFICINA_VAZIA = { nome: '', cidade: '', uf: '', telefone: '' }
   const [novaOficina, setNovaOficina] = useState<typeof NOVA_OFICINA_VAZIA | null>(null)
   const [anexoAberto, setAnexoAberto] = useState<AnexoVisual | null>(null)  // foto/NF aberta na própria tela
+  const excluir = useExcluirAnexo(id)  // foto/NF anexada por engano (#0269)
 
   const { data: os, isLoading } = useQuery({
     queryKey: ['os', id],
@@ -117,10 +119,11 @@ export default function DetalheOSPage() {
   })
 
   const uploadMut = useMutation({
-    mutationFn: ({ tipo, file }: { tipo: string, file: File }) => {
+    mutationFn: ({ tipo, file, substituir }: { tipo: string, file: File, substituir?: boolean }) => {
       const form = new FormData()
       form.append('tipo', tipo)
       form.append('arquivo', file)
+      if (substituir) form.append('substituir_nf', 'true')  // a NF anterior sai (#0269)
       return api.post(`/upload/os/${id}/anexos`, form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       }).then(r => r.data)
@@ -420,10 +423,16 @@ export default function DetalheOSPage() {
                 <div className="text-[11px] font-medium mb-1.5">📷 Fotos <span className={temFoto ? 'text-nv-success' : 'text-nv-soft'}>({(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).length})</span></div>
                 <div className="grid grid-cols-3 gap-1.5">
                   {(os.anexos || []).filter((a: any) => a.tipo.startsWith('foto')).map((a: any) => (
-                    <button key={a.id} type="button" onClick={() => setAnexoAberto(a)}
-                       className="aspect-square rounded border border-nv-border-strong overflow-hidden block hover:opacity-80">
-                      <img src={a.arquivo_url} alt="Foto anexada" className="w-full h-full object-cover" />
-                    </button>
+                    <div key={a.id} className="relative">
+                      <button type="button" onClick={() => setAnexoAberto(a)}
+                         className="aspect-square w-full rounded border border-nv-border-strong overflow-hidden block hover:opacity-80">
+                        <img src={a.arquivo_url} alt="Foto anexada" className="w-full h-full object-cover" />
+                      </button>
+                      {podeNegociar && (
+                        <button type="button" onClick={() => excluir.pedir(a)} title="Excluir foto"
+                                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-[rgba(2,15,26,.75)] text-white text-xs leading-none">✕</button>
+                      )}
+                    </div>
                   ))}
                   <label className="aspect-square border-2 border-dashed border-nv-border-strong rounded flex flex-col items-center justify-center text-nv-soft text-[10px] cursor-pointer hover:bg-nv-surface-2">
                     <span className="text-2xl">+</span>Foto
@@ -444,12 +453,16 @@ export default function DetalheOSPage() {
                     <span className="font-medium text-sm mt-1">Ver NF anexada</span>
                   </button>
                 )}
+                {temNF && podeNegociar && (
+                  <button type="button" onClick={() => { const nf = nfMaisRecente(os.anexos); if (nf) excluir.pedir(nf) }}
+                          className="w-full text-xs text-nv-danger-text hover:underline mb-1.5">Excluir NF</button>
+                )}
                 <label className={`${temNF ? 'py-1.5' : 'aspect-[3/1]'} w-full border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer ${temNF ? 'border-nv-border-strong text-nv-soft text-xs' : 'border-nv-danger bg-nv-danger-bg'}`}>
                   {!temNF && <span className="text-3xl">📄</span>}
                   <span className={`font-medium mt-1 ${temNF ? 'text-xs' : 'text-sm'}`}>{temNF ? 'Substituir NF' : 'Anexar NF'}</span>
                   {!temNF && <span className="text-[9px] text-nv-soft">PDF · JPG · ≤20MB</span>}
                   <input type="file" accept="image/*,application/pdf" className="hidden"
-                         onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMut.mutate({ tipo: 'nf', file: f }) }}/>
+                         onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadMut.mutate({ tipo: 'nf', file: f, substituir: temNF }) }}/>
                 </label>
               </div>
             </div>
@@ -547,6 +560,7 @@ export default function DetalheOSPage() {
         </div>
       )}
 
+      {excluir.modal}
       <AnexoViewer anexo={anexoAberto} onClose={() => setAnexoAberto(null)} />
     </section>
   )

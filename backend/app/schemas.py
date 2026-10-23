@@ -101,6 +101,7 @@ class AnexoOut(BaseModel):
     size_bytes: Optional[int] = None
     mime_type: Optional[str] = None
     filename_original: Optional[str] = None
+    uploaded_by: Optional[int] = None
     uploaded_at: datetime
     model_config = ConfigDict(from_attributes=True)
 

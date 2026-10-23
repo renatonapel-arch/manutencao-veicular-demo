@@ -254,7 +254,12 @@ class OrdemServico(Base):
     veiculo = relationship("VeiculoSnapshot")
     oficina = relationship("OficinaPadronizada")
     itens = relationship("OsItemLinha", back_populates="os", cascade="all, delete-orphan")
-    anexos = relationship("AnexosOs", back_populates="os", cascade="all, delete-orphan")
+    # Só os anexos NÃO excluídos (#0269): quem lê os.anexos (validação de encerrar, tela, Caixa)
+    # nunca vê um excluído. Somente leitura — anexo novo entra por AnexosOs(os_id=...).
+    anexos = relationship(
+        "AnexosOs", viewonly=True, order_by="AnexosOs.id",
+        primaryjoin="and_(OrdemServico.id == AnexosOs.os_id, AnexosOs.excluido_em.is_(None))",
+    )
 
     __table_args__ = (
         Index("idx_os_filial_status_data", "filial_id", "status", "data_abertura"),
@@ -324,8 +329,11 @@ class AnexosOs(Base):
     filename_original = Column(String(200))
     uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Exclusão SUAVE (#0269): o arquivo fica no disco; o anexo some da tela e das contagens.
+    excluido_em = Column(DateTime(timezone=True), nullable=True)
+    excluido_por = Column(Integer, nullable=True)
 
-    os = relationship("OrdemServico", back_populates="anexos")
+    os = relationship("OrdemServico")
 
     __table_args__ = (
         Index("idx_anexos_os", "os_id", "tipo"),

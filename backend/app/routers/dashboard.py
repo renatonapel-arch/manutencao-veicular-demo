@@ -134,7 +134,7 @@ async def dashboard(
     com_nf = await _conta(db, escopo + [
         OrdemServico.status == "encerrada",
         OrdemServico.origem.is_(None),
-        OrdemServico.id.in_(select(AnexosOs.os_id).where(AnexosOs.tipo == "nf")),
+        OrdemServico.id.in_(select(AnexosOs.os_id).where(AnexosOs.tipo == "nf", AnexosOs.excluido_em.is_(None))),
     ])
     pct_nf = (
         (Decimal(str(com_nf * 100)) / total_encerradas).quantize(Decimal("0.1"))

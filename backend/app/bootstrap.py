@@ -89,6 +89,9 @@ _MIGRATIONS_V3 = [
         WHERE origem IS NOT NULL AND deleted_at IS NULL AND status <> 'cancelada'""",
     # 4e) oficina cadastrada à mão: o sync com o troca-óleo não pode desativá-la — #0267
     "ALTER TABLE oficina_padronizada ADD COLUMN IF NOT EXISTS manual boolean NOT NULL DEFAULT false",
+    # 4f) anexo excluído de forma suave (foto/NF subida por engano) — #0269
+    "ALTER TABLE anexos_os ADD COLUMN IF NOT EXISTS excluido_em timestamptz",
+    "ALTER TABLE anexos_os ADD COLUMN IF NOT EXISTS excluido_por integer",
     # 5) view de garantia ativa
     """CREATE OR REPLACE VIEW manutencao_garantia_ativa AS
         SELECT i.id AS item_id, o.id AS os_id, o.veiculo_id, o.oficina_id,
