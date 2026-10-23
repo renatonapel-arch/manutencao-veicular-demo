@@ -68,8 +68,8 @@ async def create_oficina(
         func.lower(func.trim(OficinaPadronizada.nome)) == nome_normalizado.lower()
     )
     existing = (await db.execute(stmt)).scalar_one_or_none()
-    if existing:
-        raise HTTPException(status_code=409, detail=f"Oficina já existe (ID {existing.id})")
+    if existing and existing.ativa:
+        raise HTTPException(status_code=409, detail=f"Oficina já existe (ID {existing.id}) — selecione na lista")
 
     # Normaliza strings vazias pra None (evita UNIQUE violation em CNPJ='')
     data = payload.model_dump(exclude={"nome"})
@@ -78,7 +78,19 @@ async def create_oficina(
         if isinstance(v, str):
             data[k] = v.strip() or None
 
-    of = OficinaPadronizada(nome=nome_normalizado, **data)
+    if existing:
+        # Mesmo nome de uma oficina DESATIVADA (que a lista não mostra): reativa e completa o
+        # que estiver vazio, em vez de dizer "já existe" sobre algo que ninguém enxerga (#0267).
+        existing.ativa = True
+        existing.manual = True
+        for k in ("cnpj", "telefone", "cidade", "uf", "especialidade", "filial_id_preferencial"):
+            if data.get(k) and not getattr(existing, k):
+                setattr(existing, k, data[k])
+        await db.commit()
+        await db.refresh(existing)
+        return existing
+
+    of = OficinaPadronizada(nome=nome_normalizado, manual=True, **data)
     db.add(of)
     await db.commit()
     await db.refresh(of)

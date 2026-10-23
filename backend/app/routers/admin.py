@@ -156,7 +156,9 @@ async def trigger_sync_oficinas(
         vistos.add(norm)
         cidades = r.get("cidades") or []
         alvo = por_norm.get(norm)
-        if alvo:
+        if alvo and alvo.manual:
+            alvo.ativa = True  # cadastrada à mão: só garante que apareça; não sobrescreve os dados
+        elif alvo:
             alvo.nome = r.get("nome") or alvo.nome
             alvo.nome_normalizado = norm
             alvo.cidade = cidades[0] if cidades else alvo.cidade
@@ -177,7 +179,7 @@ async def trigger_sync_oficinas(
 
     desativadas = 0
     for norm, o in por_norm.items():
-        if norm not in vistos:
+        if norm not in vistos and not o.manual:
             o.ativa = False
             desativadas += 1
 

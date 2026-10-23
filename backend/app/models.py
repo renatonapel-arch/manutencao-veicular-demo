@@ -172,6 +172,9 @@ class OficinaPadronizada(Base):
     avaliacao = Column(Numeric(3, 1))
     filial_id_preferencial = Column(Integer)
     ativa = Column(Boolean, default=True, nullable=False)
+    # Cadastrada à mão no Clavis (ou reativada por quem cadastrou): o sync-oficinas com o
+    # troca-óleo não desativa nem apaga dados dela — #0267 (a ID 70 sumia da lista).
+    manual = Column(Boolean, default=False, nullable=False, server_default=text("false"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (

@@ -87,6 +87,8 @@ _MIGRATIONS_V3 = [
     "ALTER TABLE os_manutencao ADD COLUMN IF NOT EXISTS origem_dados jsonb",
     """CREATE UNIQUE INDEX IF NOT EXISTS ix_os_origem_ref_ativa ON os_manutencao(origem, origem_ref)
         WHERE origem IS NOT NULL AND deleted_at IS NULL AND status <> 'cancelada'""",
+    # 4e) oficina cadastrada à mão: o sync com o troca-óleo não pode desativá-la — #0267
+    "ALTER TABLE oficina_padronizada ADD COLUMN IF NOT EXISTS manual boolean NOT NULL DEFAULT false",
     # 5) view de garantia ativa
     """CREATE OR REPLACE VIEW manutencao_garantia_ativa AS
         SELECT i.id AS item_id, o.id AS os_id, o.veiculo_id, o.oficina_id,
