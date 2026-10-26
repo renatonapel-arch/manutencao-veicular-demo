@@ -4,7 +4,13 @@ import { Link } from 'react-router-dom'
  * "Última vez" do mesmo serviço (mesma categoria) neste veículo — #0272.
  * A lista vem pronta do backend (servico_anterior: até 3, sem canceladas nem a própria).
  */
-const data = (s: string) => new Date(s).toLocaleDateString('pt-BR')
+// OS migradas do Pipefy guardam só o dia (meia-noite UTC); no fuso de Brasília isso
+// cairia no dia anterior — então meia-noite UTC exata é lida como data pura.
+const data = (s: string) => {
+  const d = new Date(s)
+  const soDia = d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0
+  return d.toLocaleDateString('pt-BR', soDia ? { timeZone: 'UTC' } : undefined)
+}
 const km = (n: number) => n.toLocaleString('pt-BR')
 
 function distancia(s: any) {
