@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { FilialChip } from '../components/Badges'
+import { CATEGORIAS } from '../categorias'
 
 function uuid4(): string {
   // RFC4122 v4 simples (não-crypto, ok pra demo)
@@ -52,7 +53,7 @@ export default function NovaOSPage() {
         request_id,
         veiculo_id: Number(veiculoId),
         tipo_os: tipoOs,
-        categoria: categoria || null,
+        categoria,
         urgencia: urgencia || null,
         km_veiculo: Number(km),
         descricao_problema: descricao || null,
@@ -72,7 +73,7 @@ export default function NovaOSPage() {
     },
   })
 
-  const podeSalvar = veiculoId && km > 0 && descricao
+  const podeSalvar = veiculoId && km > 0 && descricao && categoria
 
   return (
     <section className="max-w-3xl">
@@ -158,9 +159,9 @@ export default function NovaOSPage() {
 
           {/* Categoria (campo Tipo do Pipefy) */}
           <div className="mt-3">
-            <label className="text-[11px] text-nv-soft block mb-1">Categoria do serviço <span className="text-nv-soft">(alimenta o dashboard)</span></label>
+            <label className="text-[11px] text-nv-soft block mb-1">Categoria do serviço <span className="text-nv-danger-text">*</span> <span className="text-nv-soft">(mostra a última vez que foi feito)</span></label>
             <div className="flex flex-wrap gap-1.5">
-              {['Motor', 'Pneu', 'Pastilha / Lona', 'Relação', 'Lâmpadas', 'Elétrica', 'Bateria', 'Embreagem', 'Empilhadeira', 'Outros'].map(c => (
+              {CATEGORIAS.map(c => (
                 <button
                   key={c} type="button"
                   onClick={() => setCategoria(categoria === c ? '' : c)}

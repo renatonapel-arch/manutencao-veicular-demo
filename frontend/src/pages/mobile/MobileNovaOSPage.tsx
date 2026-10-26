@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../api/client'
+import { CATEGORIAS } from '../../categorias'
 
 function uuid4(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -23,6 +24,7 @@ export default function MobileNovaOSPage() {
   const qc = useQueryClient()
   const [veiculoId, setVeiculoId] = useState<number | ''>('')
   const [tipoOs, setTipoOs] = useState<'corretiva_manual' | 'preventiva_automatica'>('corretiva_manual')
+  const [categoria, setCategoria] = useState('')
   const [descricao, setDescricao] = useState('')
   const [km, setKm] = useState<number>(0)
   const [erro, setErro] = useState('')
@@ -47,6 +49,7 @@ export default function MobileNovaOSPage() {
         request_id,
         veiculo_id: Number(veiculoId),
         tipo_os: tipoOs,
+        categoria,
         km_veiculo: Number(km),
         descricao_problema: descricao || null,
       }, { headers: { 'Idempotency-Key': request_id } }).then(r => r.data)
@@ -61,7 +64,7 @@ export default function MobileNovaOSPage() {
     onError: (e: any) => setErro(e.response?.data?.detail || 'Erro ao abrir OS'),
   })
 
-  const podeSalvar = !!veiculoId && km > 0 && !!descricao
+  const podeSalvar = !!veiculoId && km > 0 && !!descricao && !!categoria
 
   return (
     <section className="flex flex-col h-full">
@@ -104,6 +107,17 @@ export default function MobileNovaOSPage() {
             placeholder="Ex: vazamento de óleo no motor"
             className="w-full px-3 py-2 border border-nv-border rounded-lg h-24 text-sm"
           />
+        </div>
+        <div>
+          <label className="text-[11px] text-nv-soft block mb-1">Categoria do serviço *</label>
+          <div className="flex flex-wrap gap-1.5">
+            {CATEGORIAS.map(c => (
+              <button key={c} type="button" onClick={() => setCategoria(c)}
+                      className={`px-3 py-2 rounded-full text-[13px] border ${categoria === c ? 'bg-nv-primary text-nv-bg border-nv-primary' : 'bg-nv-surface border-nv-border-strong text-nv-soft'}`}>
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setTipoOs('corretiva_manual')} className={`flex-1 py-3 rounded-lg border-2 font-medium ${tipoOs === 'corretiva_manual' ? 'border-nv-danger bg-nv-danger-bg text-nv-danger-text' : 'border-nv-border-strong text-nv-soft'}`} style={{ minHeight: 48 }}>

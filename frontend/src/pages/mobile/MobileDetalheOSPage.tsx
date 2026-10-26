@@ -6,6 +6,7 @@ import { useAuth } from '../../auth/AuthContext'
 import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../../components/Badges'
 import AnexoViewer, { AnexoVisual, nfMaisRecente } from '../../components/AnexoViewer'
 import { OrigemCaixaCard, OrigemChip } from '../../components/OrigemCaixa'
+import ServicoAnterior from '../../components/ServicoAnterior'
 import { useExcluirAnexo } from '../../components/ExcluirAnexo'
 
 /**
@@ -178,6 +179,8 @@ export default function MobileDetalheOSPage() {
           <div className="text-[13px]">{os.descricao_problema}</div>
         </div>
       )}
+
+      <ServicoAnterior os={os} mobile />
 
       {/* Oficina — editável enquanto a OS não fechou (negociação do gestor) */}
       <div className="bg-nv-surface border border-nv-border rounded-lg p-3">

@@ -7,6 +7,7 @@ import { fmtBRL, fmtDataHora, FilialChip, StatusBadge, TipoBadge } from '../comp
 import AnexoViewer, { AnexoVisual, nfMaisRecente } from '../components/AnexoViewer'
 import { OrigemCaixaCard, OrigemChip } from '../components/OrigemCaixa'
 import { useExcluirAnexo } from '../components/ExcluirAnexo'
+import ServicoAnterior from '../components/ServicoAnterior'
 
 // v3: cada transição vira POST /ordem-servico/{id}/{acao} — máquina de 9 estados
 const TRANSICOES_ACAO: { de: string; acao: string; label: string; cor: string; precisaMotivo?: boolean }[] = [
@@ -244,6 +245,8 @@ export default function DetalheOSPage() {
             <div className="kpi-label mb-3">2 · Problema reportado</div>
             <div className="text-[13px]">{os.descricao_problema || '—'}</div>
           </div>
+
+          <ServicoAnterior os={os} />
 
           {/* Oficina — negociação do gestor, separada da abertura (pedido Hudson #0145) */}
           <div className="card p-5">

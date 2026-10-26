@@ -250,8 +250,43 @@ async def get_os(
         "veiculo": os.veiculo, "oficina": os.oficina,
         "itens": os.itens, "anexos": os.anexos,
         "auditoria": list(auditoria),
+        "servico_anterior": await _servico_anterior(db, os),
     })
     return payload
+
+
+async def _servico_anterior(db: AsyncSession, os: OrdemServico) -> list[dict]:
+    """As 3 últimas OS do mesmo veículo e mesma categoria, abertas antes desta (#0272).
+
+    Fora: a própria, canceladas e rascunhos. "Outros" junta coisa sem relação (baú,
+    placa, retrovisor…), então não compara — mostraria uma "última vez" enganosa.
+    """
+    if not os.categoria or os.categoria == "Outros":
+        return []
+    anteriores = (await db.execute(
+        select(OrdemServico)
+        .where(
+            OrdemServico.veiculo_id == os.veiculo_id,
+            OrdemServico.categoria == os.categoria,
+            OrdemServico.id != os.id,
+            OrdemServico.deleted_at.is_(None),
+            OrdemServico.status.notin_(("cancelada", "rascunho")),
+            OrdemServico.data_abertura < os.data_abertura,
+        )
+        .order_by(OrdemServico.data_abertura.desc())
+        .limit(3)
+    )).scalars().all()
+    out = []
+    for a in anteriores:
+        data = a.data_encerramento or a.data_abertura
+        km = os.km_veiculo - a.km_veiculo if a.km_veiculo and os.km_veiculo else None
+        out.append({
+            "id": a.id, "data": data, "km_veiculo": a.km_veiculo, "status": a.status,
+            "descricao": a.descricao_itens_original or a.descricao_problema,
+            "dias_antes": max((os.data_abertura - data).days, 0),
+            "km_antes": km if km is not None and km >= 0 else None,
+        })
+    return out
 
 
 @router.patch("/{os_id}", response_model=OrdemServicoOut)

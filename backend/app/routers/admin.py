@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from ..database import get_db
 from ..dependencies import require_role
@@ -419,6 +420,80 @@ async def script_log(
         return {"ok": False, "erro": "log inexistente"}
     data = path.read_bytes()[-8192:]
     return {"ok": True, "log": data.decode("utf-8", errors="replace")}
+
+
+# Palavra-chave → categoria, só pro preenchimento único das OS antigas sem categoria (#0272).
+# Ordem importa: 1ª que bater ganha. \b no começo evita "rodovia"→roda e "motorista"→motor.
+_REGRAS_CATEGORIA = [
+    ("Pastilha / Lona", r"\b(freio|pastilha|lona)"),
+    ("Pneu", r"\b(pneu|c[aâ]mara de ar)"),
+    ("Relação", r"\b(rela[cç][aã]o|corrente|coroa|pinh[aã]o)"),
+    ("Embreagem", r"\b(embreagem|empreagem)"),
+    ("Lâmpadas", r"\b(l[aâ]mpada|farol|luz|pisca)"),
+    ("Bateria", r"\bbateria"),
+    ("Elétrica", r"\b(el[eé]tric|chicote|fia[cç][aã]o)"),
+    ("Motor", r"\b([oó]leo|motor\b|correia|v[aá]lvula|radiador|carburador)"),
+]
+
+
+def _sugerir_categoria(texto: str) -> tuple[str, str]:
+    """(categoria, palavra que decidiu). Sem palavra conhecida → Outros, como o import do Pipefy."""
+    import re
+    for cat, padrao in _REGRAS_CATEGORIA:
+        m = re.search(padrao, texto or "", re.IGNORECASE)
+        if m:
+            return cat, m.group(0)
+    return "Outros", ""
+
+
+@router.post("/preencher-categorias")
+async def preencher_categorias(
+    modo: str = "previa",
+    user: User = Depends(require_role(["admin"])),
+    db: AsyncSession = Depends(get_db),
+):
+    """Preenche UMA VEZ a categoria das OS que estão sem (#0272). Só grava onde está vazia.
+
+    modo=previa (padrão) só lista · aplicar grava e registra no histórico de cada OS ·
+    desfazer volta a vazio as que este preenchimento gravou e ninguém mudou depois.
+    """
+    if modo not in ("previa", "aplicar", "desfazer"):
+        return {"ok": False, "erro": "modo = previa | aplicar | desfazer"}
+    op = "categoria:preenchida_auto"
+
+    if modo == "desfazer":
+        regs = (await db.execute(select(AuditoriaOs).where(AuditoriaOs.operacao == op))).scalars().all()
+        desfeitas = []
+        for r in regs:
+            os_ = await db.get(OrdemServico, r.os_id)
+            if os_ and os_.categoria == (r.after_data or {}).get("categoria"):
+                os_.categoria = None
+                db.add(AuditoriaOs(os_id=os_.id, operacao="categoria:preenchida_auto_desfeita",
+                                   user_id=user.id, filial_id=user.filial_id,
+                                   before_data=r.after_data, after_data={"categoria": None}))
+                desfeitas.append(os_.id)
+        await db.commit()
+        return {"ok": True, "modo": modo, "desfeitas": desfeitas}
+
+    vazias = (await db.execute(
+        select(OrdemServico).options(selectinload(OrdemServico.veiculo))
+        .where(OrdemServico.categoria.is_(None), OrdemServico.deleted_at.is_(None))
+        .order_by(OrdemServico.id)
+    )).scalars().all()
+    lista = []
+    for o in vazias:
+        texto = f"{o.descricao_problema or ''} {o.descricao_itens_original or ''}".strip()
+        cat, palavra = _sugerir_categoria(texto)
+        lista.append({"os_id": o.id, "placa": o.veiculo.placa if o.veiculo else None,
+                      "status": o.status, "texto": texto[:120], "categoria": cat, "palavra": palavra})
+        if modo == "aplicar":
+            o.categoria = cat
+            db.add(AuditoriaOs(os_id=o.id, operacao=op, user_id=user.id, filial_id=user.filial_id,
+                               motivo=f"palavra: {palavra}" if palavra else "sem palavra conhecida",
+                               before_data={"categoria": None}, after_data={"categoria": cat}))
+    if modo == "aplicar":
+        await db.commit()
+    return {"ok": True, "modo": modo, "total": len(lista), "os": lista}
 
 
 @router.post("/reset-tudo-e-sync")

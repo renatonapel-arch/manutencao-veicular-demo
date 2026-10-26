@@ -127,7 +127,8 @@ class OrdemServicoCreate(BaseModel):
     descricao_problema: Optional[str] = None
     data_agendada: Optional[date] = None
     prazo_estimado_dias: Optional[int] = None
-    categoria: Optional[CATEGORIA_LITERAL] = None
+    # Obrigatória ao abrir (#0272): é por ela que a OS acha "a última vez" do mesmo serviço.
+    categoria: CATEGORIA_LITERAL
     urgencia: Optional[URGENCIA_LITERAL] = None
     tipo_destino: DESTINO_LITERAL = "oficina_terceirizada"
     funcionario_relator_id: Optional[int] = None
@@ -202,12 +203,24 @@ class AuditoriaOsOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ServicoAnterior(BaseModel):
+    """Vez anterior do mesmo serviço (mesma categoria) no mesmo veículo — #0272."""
+    id: int
+    data: datetime
+    km_veiculo: int
+    status: str
+    descricao: Optional[str] = None
+    dias_antes: int
+    km_antes: Optional[int] = None  # None quando o KM não ajuda (zerado ou maior que o desta OS)
+
+
 class OrdemServicoDetalhe(OrdemServicoOut):
     veiculo: VeiculoOut
     oficina: Optional[OficinaOut] = None
     itens: List[ItemLinhaOut] = []
     anexos: List[AnexoOut] = []
     auditoria: List[AuditoriaOsOut] = []
+    servico_anterior: List[ServicoAnterior] = []
 
 
 class ListaOSResponse(BaseModel):
