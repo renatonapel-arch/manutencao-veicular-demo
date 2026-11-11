@@ -62,7 +62,7 @@ export default function ListaOSPage() {
           </span>
           <input
             className="input pl-10"
-            placeholder="Buscar por problema…"
+            placeholder="Buscar por placa, modelo ou problema…"
             value={q}
             onChange={e => { setQ(e.target.value); setOffset(0) }}
           />

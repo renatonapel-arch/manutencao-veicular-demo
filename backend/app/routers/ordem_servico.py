@@ -9,7 +9,7 @@ from decimal import Decimal
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -177,7 +177,6 @@ async def list_os(
                 # Motorista vê SÓ OS que ele mesmo abriu OU relatou como funcionário.
                 # Sem esse OR-fallback ele veria tudo da filial (funcionario_id
                 # frequentemente é NULL nos seeds e no provisionamento inicial).
-                from sqlalchemy import or_
                 conds = [OrdemServico.aberto_por_user_id == user.id]
                 if membro.funcionario_id:
                     conds.append(OrdemServico.funcionario_relator_id == membro.funcionario_id)
@@ -195,7 +194,17 @@ async def list_os(
     if oficina_id:
         base = base.where(OrdemServico.oficina_id == oficina_id)
     if q:
-        base = base.where(OrdemServico.descricao_problema.ilike(f"%{q}%"))
+        # Placa sem hífen/espaço e sem diferença de maiúscula (ABC-1234 = abc1234), modelo
+        # ou problema reportado — #0305 (antes só o problema; placa filtrava só a página).
+        placa = q.replace("-", "").replace(" ", "")
+        veiculos = select(VeiculoSnapshot.id).where(or_(
+            func.replace(func.replace(VeiculoSnapshot.placa, "-", ""), " ", "").ilike(f"%{placa}%"),
+            VeiculoSnapshot.modelo.ilike(f"%{q}%"),
+        ))
+        base = base.where(or_(
+            OrdemServico.descricao_problema.ilike(f"%{q}%"),
+            OrdemServico.veiculo_id.in_(veiculos),
+        ))
 
     count_stmt = select(func.count()).select_from(base.subquery())
     total = int((await db.execute(count_stmt)).scalar_one())
