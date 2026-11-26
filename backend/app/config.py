@@ -79,8 +79,6 @@ ROLES = {
     "admin_oficinas": "Gestão do catálogo de oficinas",
 }
 
-FILIAIS = {
-    1: {"codigo": 100, "nome": "Maringá", "uf": "PR"},
-    2: {"codigo": 700, "nome": "Ponta Grossa", "uf": "PR"},
-    3: {"codigo": 900, "nome": "Luís Eduardo Magalhães", "uf": "BA"},
-}
+# Filiais: dono = Clavis (colaboradores.filial_sige). Mapa codigo -> id interno so em
+# integrations/patrimonial_client._map_filial (front: src/filiais.ts). O antigo FILIAIS daqui
+# (700 = Ponta Grossa, 900 = LEM) estava errado e sem uso: removido (conserto nº 4, 26/11/2026).
